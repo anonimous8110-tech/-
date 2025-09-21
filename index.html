@@ -1,203 +1,240 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat con Voz y Perfil</title>
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      background: #0f0f0f; 
-      color: #fff; 
-      text-align: center; 
-    }
-    #container { 
-      max-width: 700px; 
-      margin: auto; 
-      padding: 20px; 
-    }
-    h1 { color: #00ffc8; }
-    button {
-      background: #00ffc8;
-      color: #000;
-      border: none;
-      padding: 10px 15px;
-      margin: 5px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    input[type=text] {
-      padding: 8px;
-      border-radius: 5px;
-      border: none;
-      width: 70%;
-    }
-    #chatBox {
-      width: 100%;
-      height: 200px;
-      background: #202020;
-      overflow-y: auto;
-      border-radius: 8px;
-      padding: 10px;
-      text-align: left;
-      margin-top: 10px;
-    }
-    .profile {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin: 15px 0;
-    }
-    .profile img {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      border: 3px solid #00ffc8;
-      object-fit: cover;
-    }
-    audio {
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Mejorado con Voz y Perfil</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0f0f0f;
+    color: #fff;
+    text-align: center;
+  }
+  #container {
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+  }
+  h1 { color: #00ffc8; }
+  button {
+    background: #00ffc8;
+    color: #000;
+    border: none;
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  input[type=text], input[type=file] {
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    width: 70%;
+  }
+  #chatBox {
+    width: 100%;
+    height: 250px;
+    background: #202020;
+    overflow-y: auto;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+    margin-top: 10px;
+  }
+  .profile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 15px 0;
+  }
+  .profile img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #00ffc8;
+    object-fit: cover;
+  }
+  #typingStatus {
+    font-style: italic;
+    color: #888;
+    font-size: 0.9em;
+  }
+  .message-you { color: #00ffc8; }
+  .message-friend { color: #ff6a00; }
+  audio { display: none; }
+</style>
 </head>
 <body>
-  <div id="container">
-    <h1>Chat con Voz + Perfil</h1>
-    <p><strong>Tu ID:</strong> <span id="myId">...</span></p>
-    <input id="friendId" type="text" placeholder="ID de tu amigo">
-    <button onclick="connectCall()">📞 Llamar</button>
-    <br><br>
+<div id="container">
+  <h1>Chat Mejorado + Voz</h1>
+  <p><strong>Tu ID:</strong> <span id="myId">...</span></p>
+  <input id="friendId" type="text" placeholder="ID de tu amigo">
+  <button onclick="connectCall()">📞 Llamar</button>
+  <br><br>
 
-    <!-- Perfil propio -->
-    <div class="profile">
-      <div>
-        <p>Tú</p>
-        <img id="myPhoto" src="https://via.placeholder.com/80?text=Yo">
-        <br>
-        <input type="file" id="photoInput" accept="image/*">
-      </div>
-
-      <!-- Perfil remoto -->
-      <div>
-        <p>Amigo</p>
-        <img id="friendPhoto" src="https://via.placeholder.com/80?text=Amigo">
-      </div>
+  <div class="profile">
+    <div>
+      <p>Tú: <input id="myName" type="text" placeholder="Tu nombre" value="Tú" style="width:60px"></p>
+      <img id="myPhoto" src="https://via.placeholder.com/80?text=Yo">
+      <br>
+      <input type="file" id="photoInput" accept="image/*">
     </div>
-
-    <button id="muteBtn">🔇 Silenciar micrófono</button>
-
-    <div id="chatBox"></div>
-    <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
-    <button onclick="sendMessage()">Enviar</button>
-
-    <audio id="remoteAudio" autoplay></audio>
+    <div>
+      <p id="friendNameLabel">Amigo</p>
+      <img id="friendPhoto" src="https://via.placeholder.com/80?text=Amigo">
+    </div>
   </div>
 
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <script>
-    const myIdSpan = document.getElementById('myId');
-    const remoteAudio = document.getElementById('remoteAudio');
-    const chatBox = document.getElementById('chatBox');
-    const myPhoto = document.getElementById('myPhoto');
-    const friendPhoto = document.getElementById('friendPhoto');
-    const photoInput = document.getElementById('photoInput');
+  <button id="toggleEffect">🎛️ Activar voz hacker</button>
+  <button id="muteBtn">🔇 Silenciar micrófono</button>
 
-    let myStream, currentCall, muted = false;
-    let currentConn;
+  <div id="chatBox"></div>
+  <div id="typingStatus"></div>
+  <input type="text" id="messageInput" placeholder="Escribe un mensaje..." onkeydown="checkEnter(event)">
+  <button onclick="sendMessage()">Enviar</button>
 
-    // Crear PeerJS
-    const peer = new Peer();
+  <audio id="remoteAudio" autoplay></audio>
+</div>
 
-    peer.on('open', id => {
-      myIdSpan.textContent = id;
-    });
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+const myIdSpan = document.getElementById('myId');
+const remoteAudio = document.getElementById('remoteAudio');
+const chatBox = document.getElementById('chatBox');
+const myPhoto = document.getElementById('myPhoto');
+const friendPhoto = document.getElementById('friendPhoto');
+const photoInput = document.getElementById('photoInput');
+const typingStatus = document.getElementById('typingStatus');
+const myNameInput = document.getElementById('myName');
+const friendNameLabel = document.getElementById('friendNameLabel');
 
-    // Capturar micrófono con cancelación de ruido
-    async function getAudioStream() {
-      return await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+let myStream, currentCall, voiceEffect = false, muted = false, currentConn;
+
+// Historial local
+let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+chatHistory.forEach(msg => displayMessage(msg.sender, msg.text, msg.time));
+
+const peer = new Peer();
+
+peer.on('open', id => {
+  myIdSpan.textContent = id;
+});
+
+async function getAudioStream() {
+  return await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+  });
+}
+
+peer.on('call', async call => {
+  myStream = await getAudioStream();
+  call.answer(myStream);
+  handleStream(call);
+});
+
+peer.on('connection', conn => {
+  currentConn = conn;
+  conn.on('data', data => {
+    if (data.type === 'chat') {
+      displayMessage('friend', data.message);
+    } else if (data.type === 'photo') {
+      friendPhoto.src = data.photo;
+    } else if (data.type === 'name') {
+      friendNameLabel.textContent = data.name;
+    } else if (data.type === 'typing') {
+      typingStatus.textContent = data.status ? "Amigo está escribiendo..." : "";
     }
+  });
+});
 
-    // Responder llamada
-    peer.on('call', async call => {
-      myStream = await getAudioStream();
-      call.answer(myStream);
-      handleStream(call);
-    });
+async function connectCall() {
+  const friendId = document.getElementById('friendId').value;
+  if (!friendId) return alert("Introduce el ID del amigo");
+  myStream = await getAudioStream();
+  const call = peer.call(friendId, myStream);
+  handleStream(call);
+  currentConn = peer.connect(friendId);
+}
 
-    // Manejo de conexión de datos (chat + perfil)
-    peer.on('connection', conn => {
-      currentConn = conn;
-      conn.on('data', data => {
-        if (data.type === 'chat') {
-          chatBox.innerHTML += `<p><strong>Amigo:</strong> ${data.message}</p>`;
-        } else if (data.type === 'photo') {
-          friendPhoto.src = data.photo;
-        }
-      });
-    });
+function handleStream(call) {
+  currentCall = call;
+  call.on('stream', stream => {
+    if (voiceEffect) applyVoiceEffect(stream);
+    else remoteAudio.srcObject = stream;
+  });
+}
 
-    // Llamar a amigo
-    async function connectCall() {
-      const friendId = document.getElementById('friendId').value;
-      if (!friendId) return alert("Introduce el ID del amigo");
+function sendMessage() {
+  const msg = document.getElementById('messageInput').value.trim();
+  if (!msg || !currentConn) return;
+  currentConn.send({ type:'chat', message: msg });
+  displayMessage('you', msg);
+  document.getElementById('messageInput').value = "";
+}
 
-      myStream = await getAudioStream();
-      const call = peer.call(friendId, myStream);
-      handleStream(call);
+function displayMessage(sender, text) {
+  const time = new Date().toLocaleTimeString();
+  const className = sender === 'you' ? 'message-you' : 'message-friend';
+  chatBox.innerHTML += `<p class="${className}"><strong>${sender==='you'?myNameInput.value:'Amigo'}:</strong> ${text} <span style="font-size:0.8em;color:#888;">${time}</span></p>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
+  // Guardar historial
+  chatHistory.push({ sender, text, time });
+  localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+  if(sender==='friend') playNotification();
+}
 
-      // Conexión de datos para chat y fotos
-      currentConn = peer.connect(friendId);
-    }
+function playNotification() {
+  const audio = new Audio('https://www.soundjay.com/button/beep-07.wav');
+  audio.play();
+}
 
-    // Manejar audio remoto
-    function handleStream(call) {
-      currentCall = call;
-      call.on('stream', stream => {
-        remoteAudio.srcObject = stream;
-      });
-    }
+photoInput.addEventListener('change', () => {
+  const file = photoInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    myPhoto.src = reader.result;
+    if (currentConn) currentConn.send({ type:'photo', photo: reader.result });
+  };
+  reader.readAsDataURL(file);
+});
 
-    // Enviar mensaje de texto
-    function sendMessage() {
-      const msg = document.getElementById('messageInput').value;
-      if (!msg || !currentConn) return;
+myNameInput.addEventListener('input', () => {
+  if(currentConn) currentConn.send({ type:'name', name: myNameInput.value });
+});
 
-      currentConn.send({ type: 'chat', message: msg });
-      chatBox.innerHTML += `<p><strong>Tú:</strong> ${msg}</p>`;
-      document.getElementById('messageInput').value = "";
-    }
+document.getElementById('toggleEffect').onclick = () => {
+  voiceEffect = !voiceEffect;
+  alert(voiceEffect ? "Voz hacker ACTIVADA" : "Voz hacker DESACTIVADA");
+};
 
-    // Enviar foto de perfil
-    photoInput.addEventListener('change', () => {
-      const file = photoInput.files[0];
-      if (!file) return;
+document.getElementById('muteBtn').onclick = () => {
+  muted = !muted;
+  if(myStream) myStream.getAudioTracks()[0].enabled = !muted;
+  document.getElementById('muteBtn').textContent = muted ? "🔊 Activar micrófono" : "🔇 Silenciar micrófono";
+};
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        myPhoto.src = reader.result;
-        if (currentConn) {
-          currentConn.send({ type: 'photo', photo: reader.result });
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+function applyVoiceEffect(stream) {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const source = audioCtx.createMediaStreamSource(stream);
+  const gainNode = audioCtx.createGain();
+  const biquadFilter = audioCtx.createBiquadFilter();
+  const pitchShifter = audioCtx.createWaveShaper();
+  gainNode.gain.value = 1.5;
+  biquadFilter.type = "lowshelf";
+  biquadFilter.frequency.value = 300;
+  biquadFilter.gain.value = 20;
+  source.connect(biquadFilter).connect(gainNode).connect(audioCtx.destination);
+}
 
-    // Botón silenciar micrófono
-    document.getElementById('muteBtn').onclick = () => {
-      muted = !muted;
-      if (myStream) {
-        myStream.getAudioTracks()[0].enabled = !muted;
-      }
-      document.getElementById('muteBtn').textContent = muted ? "🔊 Activar micrófono" : "🔇 Silenciar micrófono";
-    };
-  </script>
+// Detectar "enter" para enviar
+function checkEnter(e) {
+  if(e.key === 'Enter') sendMessage();
+  if(currentConn) currentConn.send({ type:'typing', status: e.key.length>0 });
+}
+</script>
 </body>
 </html>
