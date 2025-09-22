@@ -210,6 +210,8 @@ let currentConn = null;
 let myStream = null;
 let messageToReply = null;
 const peer = new Peer();
+// Carga la API key del usuario desde el almacenamiento local al iniciar
+let userApiKey = localStorage.getItem('userApiKey') || null;
 
 // --- LÓGICA DE CONEXIÓN (PEERJS) ---
 peer.on('open', id => { myPeerId = id; myIdSpan.textContent = id; });
@@ -276,8 +278,14 @@ function openChat(chatName) {
   chatMessages.innerHTML = ''; 
 
   if (!chatHistories[chatName]) chatHistories[chatName] = [];
-  if (chatName === 'META AI' && !chatHistories[chatName].length) {
-    chatHistories[chatName].push({ sender: 'META AI', text: 'Hola! Soy un asistente de IA. ¿En qué puedo ayudarte hoy?', type: 'received' });
+  
+  // Lógica para el mensaje inicial de META AI
+  if (chatName === 'META AI' && chatHistories[chatName].length === 0) {
+      if (!userApiKey) {
+          chatHistories[chatName].push({ sender: 'META AI', text: 'Para usar Meta AI, por favor pega tu clave de API (por ejemplo de OpenRouter) y presiona enviar. Tu clave se guardará en tu navegador.', type: 'received' });
+      } else {
+          chatHistories[chatName].push({ sender: 'META AI', text: '¡Hola de nuevo! ¿En qué puedo ayudarte?', type: 'received' });
+      }
   }
 
   chatHistories[chatName].forEach(msg => {
@@ -312,6 +320,25 @@ function sendMessage(){
     sendContactSpam();
     messageInput.value = '';
     return;
+  }
+
+  // --- LÓGICA MODIFICADA PARA GUARDAR LA API KEY ---
+  if (currentChat === 'META AI' && !userApiKey) {
+      userApiKey = messageText;
+      localStorage.setItem('userApiKey', userApiKey);
+      
+      messageInput.value = ''; // Limpiar el input
+
+      // Limpiar el historial visual y de datos
+      chatMessages.innerHTML = '';
+      chatHistories['META AI'] = [];
+      
+      // Mostrar mensaje de confirmación
+      const confirmText = "¡Clave guardada! Ahora puedes chatear conmigo.";
+      createMessageElement('META AI', confirmText, 'received');
+
+      // Detener la ejecución para no enviar la clave como un mensaje normal
+      return; 
   }
 
   if (currentChat === 'Anonimo Online') {
@@ -376,29 +403,31 @@ closeReply.addEventListener('click', () => {
   replyPreview.style.display = 'none';
 });
 
-// --- FUNCIÓN DE IA CONECTADA A OPENAI ---
+// --- FUNCIÓN DE IA ACTUALIZADA ---
 async function getAIResponse(userMessage) {
+    // Verificar si la clave de API ha sido configurada
+    if (!userApiKey) {
+        createMessageElement('META AI', 'Por favor, configura tu clave de API primero.', 'received');
+        return;
+    }
+
     const typingIndicator = document.createElement('div');
     typingIndicator.classList.add('message', 'received');
     typingIndicator.innerHTML = `<div>escribiendo...</div>`;
     chatMessages.appendChild(typingIndicator);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    // --- CONFIGURACIÓN DE LA API DE OPENAI ---
-    // ADVERTENCIA DE SEGURIDAD: ¡No expongas tu API Key en el lado del cliente en producción!
-    const API_KEY = "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";
-    const API_URL = "https://openrouter.ai/api/v1/chat/completions"; // URL actualizada para OpenRouter
+    // Usaremos la API de OpenRouter.ai que es compatible con la clave que proporcionaste
+    const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
     const requestOptions = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`,
-            'HTTP-Referer': 'http://localhost', // Requerido por OpenRouter, puede ser tu sitio
-            'X-Title': 'WhatsApp Clone'     // Opcional, ayuda a identificar tu app en OpenRouter
+            'Authorization': `Bearer ${userApiKey}` // Usa la clave guardada del usuario
         },
         body: JSON.stringify({
-            model: "openai/gpt-3.5-turbo", // Modelo para usar via OpenRouter
+            model: "openai/gpt-3.5-turbo", // Puedes cambiar el modelo si usas OpenRouter
             messages: [{ role: "user", content: userMessage }]
         })
     };
@@ -408,7 +437,6 @@ async function getAIResponse(userMessage) {
         const data = await response.json();
 
         if (!response.ok) {
-            // Si la API devuelve un error, lo mostramos
             throw new Error(data.error ? data.error.message : `Error HTTP: ${response.status}`);
         }
         
@@ -420,7 +448,7 @@ async function getAIResponse(userMessage) {
     } catch (error) {
         console.error("Error al contactar la API:", error);
         typingIndicator.remove();
-        const errorMessage = `Lo siento, no pude procesar tu solicitud. Error: ${error.message}`;
+        const errorMessage = `Lo siento, hubo un error. Verifica que tu API Key sea correcta y tenga fondos. (Error: ${error.message})`;
         createMessageElement('META AI', errorMessage, 'received');
     }
 }
@@ -490,4 +518,4 @@ messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMe
 chatHeaderInfo.addEventListener('click', () => { if (currentChat === 'META AI') openProfileInfo(); });
 </script>
 </body>
-</html>
+  </html>
