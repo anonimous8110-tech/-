@@ -103,7 +103,7 @@
 <div class="main-screen">
   <div class="connection-panel">
     <span>Tu ID: <strong id="myId">Cargando...</strong></span>
-    <input id="friendIdInput" type="text" placeholder="ID de tu amigo">
+    <input id="friendIdInput" type="text" placeholder="ID de tu Anonimo">
     <button onclick="connectToFriend()">Conectar</button>
     <div id="connectionStatus">Desconectado</div>
   </div>
@@ -117,11 +117,11 @@
         <div class="chat-message">Pregúntame lo que quieras...</div>
       </div>
     </div>
-    <div class="chat-item" onclick="openChat('Amigo Online')">
+    <div class="chat-item" onclick="openChat('Anonimo Online')">
       <div class="chat-avatar"></div>
       <div class="chat-info">
-        <div class="chat-name" id="friendNameLabel">Amigo Online</div>
-        <div class="chat-message">Chat P2P con tu amigo...</div>
+        <div class="chat-name" id="friendNameLabel">Anonimo Online</div>
+        <div class="chat-message">Chat P2P con tu Anonimo...</div>
       </div>
     </div>
   </div>
@@ -226,7 +226,7 @@ peer.on('call', async call => {
 
 function connectToFriend() {
   const friendId = friendIdInput.value.trim();
-  if (!friendId || friendId === myPeerId) return alert('ID de amigo inválido.');
+  if (!friendId || friendId === myPeerId) return alert('ID de Anonimo inválido.');
   if (currentConn) currentConn.close();
   const conn = peer.connect(friendId);
   setupConnection(conn);
@@ -237,10 +237,10 @@ function setupConnection(conn) {
     currentConn = conn;
     connectionStatus.textContent = `Conectado a ${conn.peer.slice(0, 8)}...`;
     connectionStatus.style.color = '#4CAF50';
-    friendNameLabel.textContent = `Amigo (${conn.peer.slice(0, 8)}...)`;
+    friendNameLabel.textContent = `Anonimo (${conn.peer.slice(0, 8)}...)`;
   });
   conn.on('data', data => {
-    if (data.type === 'chat' && currentChat === 'Amigo Online') {
+    if (data.type === 'chat' && currentChat === 'Anonimo Online') {
       createMessageElement(conn.peer, data.message, 'received', data.repliedTo);
       if (document.hidden || !chatScreen.classList.contains('active')) {
           messageSound.play();
@@ -250,13 +250,13 @@ function setupConnection(conn) {
   conn.on('close', () => {
     connectionStatus.textContent = 'Desconectado';
     connectionStatus.style.color = '#ffc107';
-    friendNameLabel.textContent = 'Amigo Online';
+    friendNameLabel.textContent = 'Anonimo Online';
     currentConn = null;
   });
 }
 
 async function startCall() {
-  if (currentChat !== 'Amigo Online' || !currentConn) return alert('Debes estar en el chat de "Amigo Online" y conectado para llamar.');
+  if (currentChat !== 'Anonimo Online' || !currentConn) return alert('Debes estar en el chat de "Anonimo Online" y conectado para llamar.');
   try {
     myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const call = peer.call(currentConn.peer, myStream);
@@ -267,12 +267,12 @@ async function startCall() {
 
 // --- LÓGICA DEL CHAT ---
 function openChat(chatName) {
-  if (chatName === 'Amigo Online' && !currentConn) {
-    return alert('Primero conéctate con un amigo para usar este chat.');
+  if (chatName === 'Anonimo Online' && !currentConn) {
+    return alert('Primero conéctate con un Anonimo para usar este chat.');
   }
   
   currentChat = chatName;
-  chatHeaderText.textContent = chatName === 'Amigo Online' ? friendNameLabel.textContent : chatName;
+  chatHeaderText.textContent = chatName === 'Anonimo Online' ? friendNameLabel.textContent : chatName;
   chatMessages.innerHTML = ''; 
 
   if (!chatHistories[chatName]) chatHistories[chatName] = [];
@@ -314,7 +314,7 @@ function sendMessage(){
     return;
   }
 
-  if (currentChat === 'Amigo Online') {
+  if (currentChat === 'Anonimo Online') {
     if (currentConn) {
       currentConn.send({ type: 'chat', message: messageText, repliedTo: messageToReply });
       createMessageElement('Tú', messageText, 'sent', messageToReply);
