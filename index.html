@@ -277,7 +277,7 @@ function openChat(chatName) {
 
   if (!chatHistories[chatName]) chatHistories[chatName] = [];
   if (chatName === 'META AI' && !chatHistories[chatName].length) {
-    chatHistories[chatName].push({ sender: 'META AI', text: 'Hola! ¿Cómo estás? ¿Necesitas ayuda con algo?', type: 'received' });
+    chatHistories[chatName].push({ sender: 'META AI', text: 'Hola! Soy un asistente de IA. ¿En qué puedo ayudarte hoy?', type: 'received' });
   }
 
   chatHistories[chatName].forEach(msg => {
@@ -376,28 +376,55 @@ closeReply.addEventListener('click', () => {
   replyPreview.style.display = 'none';
 });
 
-// --- FUNCIÓN DE IA CORREGIDA ---
-function getAIResponse(userMessage) {
+// --- FUNCIÓN DE IA CONECTADA A OPENAI ---
+async function getAIResponse(userMessage) {
     const typingIndicator = document.createElement('div');
     typingIndicator.classList.add('message', 'received');
     typingIndicator.innerHTML = `<div>escribiendo...</div>`;
     chatMessages.appendChild(typingIndicator);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    const responses = [
-        "Entendido. ¿Puedo ayudarte con algo más?",
-        "Procesando tu solicitud... ¿Hay algo más que necesites?",
-        "¡Claro! Estoy aquí para ayudarte. ¿Cuál es tu siguiente pregunta?",
-        "Gracias por la información. Estoy analizando los detalles.",
-        "Perfecto, he tomado nota de tu petición."
-    ];
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    // --- CONFIGURACIÓN DE LA API DE OPENAI ---
+    // ADVERTENCIA DE SEGURIDAD: ¡No expongas tu API Key en el lado del cliente en producción!
+    const API_KEY = "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";
+    const API_URL = "https://openrouter.ai/api/v1/chat/completions"; // URL actualizada para OpenRouter
 
-    setTimeout(() => {
+    const requestOptions = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`,
+            'HTTP-Referer': 'http://localhost', // Requerido por OpenRouter, puede ser tu sitio
+            'X-Title': 'WhatsApp Clone'     // Opcional, ayuda a identificar tu app en OpenRouter
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-3.5-turbo", // Modelo para usar via OpenRouter
+            messages: [{ role: "user", content: userMessage }]
+        })
+    };
+
+    try {
+        const response = await fetch(API_URL, requestOptions);
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Si la API devuelve un error, lo mostramos
+            throw new Error(data.error ? data.error.message : `Error HTTP: ${response.status}`);
+        }
+        
+        const aiMessage = data.choices[0].message.content;
+        
         typingIndicator.remove();
-        createMessageElement('META AI', randomResponse, 'received');
-    }, 1000 + Math.random() * 500); // Simula un tiempo de respuesta
+        createMessageElement('META AI', aiMessage, 'received');
+
+    } catch (error) {
+        console.error("Error al contactar la API:", error);
+        typingIndicator.remove();
+        const errorMessage = `Lo siento, no pude procesar tu solicitud. Error: ${error.message}`;
+        createMessageElement('META AI', errorMessage, 'received');
+    }
 }
+
 
 attachButton.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', (event) => {
