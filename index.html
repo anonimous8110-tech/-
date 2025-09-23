@@ -1,114 +1,320 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Online</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { height:100%; background:#000; overflow:hidden; }
-    body { font-family:"Segoe UI", Roboto, Arial, sans-serif; color:#fff; display:flex; flex-direction:column; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WhatsApp Online</title>
+<style>
+  /* --- CSS General --- */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:#000; overflow:hidden; font-family:"Segoe UI", Roboto, Arial, sans-serif; color:#fff; }
 
-    /* --- PANEL DE CONEXIÓN --- */
-    .connection-panel {
-      background: #1a1a1a;
-      padding: 10px;
-      text-align: center;
-      font-size: 0.9em;
-      border-bottom: 1px solid #333;
-    }
-    .connection-panel input { background: #333; border: 1px solid #555; color: #fff; padding: 5px; border-radius: 5px; margin: 0 5px; }
-    .connection-panel button { background: #00a884; color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-    #connectionStatus { color: #ffc107; margin-top: 5px; font-weight: bold; }
+  body { display:flex; flex-direction:column; }
 
-    .header { display:flex; align-items:center; padding:10px 15px; background:#000; border-bottom:none; }
-    .header-title { font-size:20px; font-weight:500; color:#fff; }
-    .search { padding:10px; background:#000; margin:10px 12px 0 12px; border-radius:10px; }
-    .search input { width:100%; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#1a1a1a; color:#fff; font-size:14px; }
-    .chat-list { flex:1; overflow-y:auto; background:#000; padding:6px 12px 12px 12px; }
-    .chat-item { display:flex; align-items:center; padding:14px 12px 14px 18px; background:#1a1a1a; margin-bottom:12px; border-radius:10px; position:relative; transition:background 0.2s; cursor:pointer; }
-    .chat-item:hover { background:#222; }
-    .chat-item::before { content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:#eee; border-top-left-radius:10px; border-bottom-left-radius:10px; }
-    .chat-item.meta-ai::before { background:linear-gradient(45deg, #6a11cb, #2575fc); }
-    .chat-avatar { width:45px; height:45px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; flex-shrink:0; }
-    .chat-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
-    .chat-info { flex:1; overflow:hidden; display:flex; flex-direction:column; }
-    .chat-name { font-size:15px; font-weight:500; color:#fff; margin-bottom:2px; display:flex; align-items:center; gap:4px; }
-    .verified-icon { width:16px; height:16px; }
-    .chat-message { font-size:13px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background: rgba(255,255,255,0.05); padding:6px 10px; border-radius:8px; }
-    .chat-time { font-size:12px; color:#777; margin-left:8px; white-space:nowrap; }
+  /* --- Panel de Conexión --- */
+  .connection-panel {
+    background: #1a1a1a;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.9em;
+    border-bottom: 1px solid #333;
+  }
+  .connection-panel input {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 5px;
+    border-radius: 5px;
+    margin: 0 5px;
+  }
+  .connection-panel button {
+    background: #00a884;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  #connectionStatus {
+    color: #ffc107;
+    margin-top: 5px;
+    font-weight: bold;
+  }
 
-    .chat-screen { position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: #000; display: flex; flex-direction: column; transition: left 0.3s ease; z-index: 10; }
-    .chat-screen.active { left:0; }
-    .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background: #1a1a1a; flex-shrink: 0; }
-    .chat-header-left { display:flex; align-items:center; }
-    .back-button { font-size:24px; margin-right:15px; cursor:pointer; }
-    .chat-header-info { display:flex; align-items:center; cursor:pointer; }
-    .chat-header-avatar { width:40px; height:40px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; }
-    .chat-header-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
-    .chat-header-name { font-size:16px; font-weight:500; display:flex; align-items:center; gap:5px; }
-    .call-buttons { display:flex; gap:10px; }
-    .call-buttons svg { width:24px; height:24px; cursor:pointer; fill:#00a884; }
+  /* ===== Header ===== */
+  .header { display:flex; align-items:center; padding:10px 15px; background:#000; border-bottom:none; }
+  .header-title { font-size:20px; font-weight:500; color:#fff; }
 
-    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
-    .message { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; position: relative; cursor: pointer; white-space: pre-wrap; word-break: break-word; }
-    .message.sent { background: rgba(255,255,255,0.1); align-self:flex-end; }
-    .message.received { background: rgba(255,255,255,0.05); align-self:flex-start; }
+  /* Buscador */
+  .search { padding:10px; background:#000; margin:10px 12px 0 12px; border-radius:10px; }
+  .search input { width:100%; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#1a1a1a; color:#fff; font-size:14px; }
 
-    .message-vcf { padding: 0 !important; background: transparent !important; cursor: pointer; }
-    .contact-card { background:#1E2C31; padding:0; border-radius:10px; overflow:hidden; max-width:280px; cursor:default; }
-    .contact-card-header { display:flex; align-items:center; padding:12px; overflow: hidden; }
-    .contact-avatars { display:flex; align-items:center; position:relative; }
-    .contact-avatars img, .contact-avatars .more-contacts { width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid #1E2C31; position:relative; margin-left:-22px; flex-shrink: 0; }
-    .contact-avatars img:first-child, .contact-avatars .more-contacts:first-child { margin-left:0; }
-    .contact-avatars .more-contacts { background:#2a3a41; color:#fff; font-size:14px; font-weight:bold; display:flex; align-items:center; justify-content:center; }
-    .contact-info { display:flex; flex-direction:column; margin-left:10px; overflow: hidden; }
-    .contact-name, .contact-phone { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .contact-name { font-weight:bold; color:#fff; }
-    .contact-phone { font-size:0.9em; color:#ddd; }
-    .contact-card-footer { padding:12px; border-top:1px solid #2a3a41; text-align:center; cursor:pointer; color:#00a884; font-weight:500; }
-    .contact-card-footer:hover { background:#2a3a41; }
-    
-    .chat-input-wrapper { background: #1a1a1a; flex-shrink: 0; }
-    .reply-preview { display: none; padding: 8px 15px 0 15px; }
-    .reply-preview-content { background: #000; padding: 8px; border-radius: 6px; border-left: 3px solid #6a11cb; position: relative; }
-    .reply-preview-sender { font-weight: bold; color: #6a11cb; }
-    .reply-preview-text { font-size: 0.9em; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 20px;}
-    .close-reply { position: absolute; top: 5px; right: 10px; cursor: pointer; font-size: 20px; line-height: 1; color: #777; }
-    .quoted-reply { background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; margin-bottom: 5px; border-left: 3px solid #6a11cb; overflow: hidden; }
-    .quoted-sender { font-weight: bold; color: #6a11cb; font-size: 0.9em; }
-    .quoted-text { font-size: 0.9em; color: #ccc; white-space: pre-wrap; word-break: break-word; max-height: 60px; overflow: hidden; text-overflow: ellipsis; }
+  /* Lista de chats */
+  .chat-list { flex:1; overflow-y:auto; background:#000; padding:6px 12px 12px 12px; }
+  .chat-item { display:flex; align-items:center; padding:14px 12px 14px 18px; background:#1a1a1a; margin-bottom:12px; border-radius:10px; position:relative; transition:background 0.2s; cursor:pointer; }
+  .chat-item:hover { background:#222; }
+  .chat-item::before { content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:#eee; border-top-left-radius:10px; border-bottom-left-radius:10px; }
+  .chat-item.meta-ai::before { background:linear-gradient(45deg, #6a11cb, #2575fc); }
+  .chat-avatar { width:45px; height:45px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; flex-shrink:0; }
+  .chat-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
+  .chat-info { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+  .chat-name { font-size:15px; font-weight:500; color:#fff; margin-bottom:2px; display:flex; align-items:center; gap:4px; }
+  .verified-icon { width:16px; height:16px; }
+  .chat-message { font-size:13px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background: rgba(255,255,255,0.05); padding:6px 10px; border-radius:8px; }
+  .chat-time { font-size:12px; color:#777; margin-left:8px; white-space:nowrap; }
 
-    .chat-input { display:flex; align-items:center; padding:10px; }
-    .attach-button { margin-right:10px; cursor:pointer; font-size:24px; transform:rotate(45deg); }
-    .chat-input input[type="text"] { flex:1; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#333; color:#fff; font-size:14px; margin-right:10px; }
-    .chat-input input[type="file"] { display:none; }
-    .send-button { width:40px; height:40px; border-radius:50%; background:#00a884; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-    
-    .profile-screen { position: fixed; top: 0; left: 100%; width: 100%; height: 100%; background-color: #000; z-index: 20; transition: left 0.3s ease; display: flex; flex-direction: column; }
-    .profile-screen.active { left: 0; }
-    .profile-header { display: flex; align-items: center; padding: 10px 15px; background-color: #1a1a1a; flex-shrink: 0; }
-    .profile-header-title { font-size: 18px; font-weight: 500; }
-    .profile-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 50px; text-align: center; }
-    .profile-avatar { width: 120px; height: 120px; border-radius: 50%; background: #222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; margin-bottom: 20px; }
-    .profile-name { font-size: 22px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; }
-    .profile-description { font-size: 15px; color: #aaa; max-width: 80%; }
-  </style>
+  /* --- Chat Screen --- */
+  .chat-screen {
+    position: fixed;
+    top: 0;
+    left: 100%;
+    width: 100%;
+    height: 100vh;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    transition: left 0.3s ease;
+    z-index: 10;
+  }
+  .chat-screen.active { left:0; }
+
+  /* Header del chat */
+  .chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .chat-header-left { display:flex; align-items:center; }
+  .back-button { font-size:24px; margin-right:15px; cursor:pointer; }
+  .chat-header-info { display:flex; align-items:center; cursor:pointer; }
+  .chat-header-avatar { width:40px; height:40px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; }
+  .chat-header-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
+  .chat-header-name { font-size:16px; font-weight:500; display:flex; align-items:center; gap:5px; }
+
+  /* botones de llamada */
+  .call-buttons { display:flex; gap:10px; }
+  .call-buttons svg { width:24px; height:24px; cursor:pointer; fill:#00a884; }
+
+  /* mensajes del chat */
+  .chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .message {
+    max-width: 70%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    position: relative;
+    cursor: pointer;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .message.sent { background: rgba(255,255,255,0.1); align-self:flex-end; }
+  .message.received { background: rgba(255,255,255,0.05); align-self:flex-start; }
+
+  /* Input del chat */
+  .chat-input-wrapper { background: #1a1a1a; flex-shrink: 0; }
+  .reply-preview { display: none; padding: 8px 15px 0 15px; }
+  .reply-preview-content { background: #000; padding: 8px; border-radius: 6px; border-left: 3px solid #6a11cb; position: relative; }
+  .reply-preview-sender { font-weight: bold; color: #6a11cb; }
+  .reply-preview-text { font-size: 0.9em; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 20px;}
+  .close-reply { position: absolute; top: 5px; right: 10px; cursor:pointer; font-size:20px; color:#777; }
+  .quoted-reply { background: rgba(0,0,0,0.25); padding:8px; border-radius:6px; margin-bottom:5px; border-left:3px solid #6a11cb; overflow:hidden; }
+  .quoted-sender { font-weight:bold; color:#6a11cb; font-size:0.9em; }
+  .quoted-text { font-size:0.9em; color:#ccc; white-space:pre-wrap; word-break:break-word; max-height:60px; overflow:hidden; text-overflow:ellipsis; }
+
+  .chat-input { display:flex; align-items:center; padding:10px; }
+  .attach-button { margin-right:10px; cursor:pointer; font-size:24px; transform:rotate(45deg); }
+  .chat-input input[type="text"] { flex:1; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#333; color:#fff; font-size:14px; margin-right:10px; }
+  .chat-input input[type="file"] { display:none; }
+  .send-button { width:40px; height:40px; border-radius:50%; background:#00a884; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  /* Perfil del contacto */
+  .profile-screen {
+    position: fixed;
+    top: 0; left: 100%;
+    width: 100%; height: 100%;
+    background-color: #000;
+    z-index: 20;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .profile-screen.active { left:0; }
+  .profile-header {
+    display:flex; align-items:center; padding:10px 15px; background:#1a1a1a; flex-shrink:0;
+  }
+  .profile-header-title { font-size:18px; font-weight:500; }
+  .profile-content {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:50px; text-align:center;
+  }
+  .profile-avatar {
+    width:120px; height:120px; border-radius:50%; background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; margin-bottom:20px;
+  }
+  .profile-name {
+    font-size:22px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:15px;
+  }
+  .profile-description {
+    font-size:15px; color:#aaa; max-width:80%;
+  }
+
+  /* --- Botón de configuración (tuerca) --- */
+  .settings-icon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: #222;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+  .settings-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: #fff;
+  }
+
+  /* --- Menú bottom sheet --- */
+  .bottom-sheet {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    max-height: 300px;
+    background-color: #222;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding: 20px;
+    z-index: 998;
+  }
+  .bottom-sheet.active {
+    transform: translateY(0);
+  }
+  /* Opciones del menú */
+  .menu-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #444;
+  }
+  .menu-option:last-child {
+    border-bottom: none;
+  }
+  .menu-option span {
+    font-size: 14px;
+    color: #fff;
+  }
+  /* Switch styles */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+  }
+  .switch input { display:none; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 20px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 16px; width: 16px;
+    left: 2px; bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: #00a884;
+  }
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+</style>
 </head>
 <body>
 
+<!-- Tuerca para abrir el menú -->
+<div class="settings-icon" id="settingsBtn" title="Configuraciones">
+  <!-- Icono de tuerca -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.03-.66-.07-.98l2.11-1.65a.5.5 0 00.12-.66l-2-3.46a.5.5 0 00-.61-.2l-2.49 1a6.994 6.994 0 00-1.7-.98l-.38-2.65A.505.505 0 0014 2h-4c-.26 0-.47.19-.5.44l-.38 2.65c-.63.24-1.2.57-1.7.98l-2.49-1a.5.5 0 00-.61.2l-2 3.46c-.25.43-.09.99.12 1.34l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65a.5.5 0 00-.12.66l2 3.46c.25.43.66.55.98.3l2.49-1c.5.41 1.07.75 1.7.98l.38 2.65c.03.25.24.44.5.44h4c.26 0 .47-.19.5-.44l.38-2.65c.63-.24 1.2-.57 1.7-.98l2.49 1c.32.25.73.13.98-.3l2-3.46a.5.5 0 00-.61-.2l-2.49 1a6.994 6.994 0 00-1.7-.98l-.38-2.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+  </svg>
+</div>
+
+<!-- Menú bottom sheet -->
+<div class="bottom-sheet" id="bottomSheet">
+  <h3 style="color:#fff; margin-bottom:15px;">Configuraciones</h3>
+  <!-- Opciones toggle -->
+  <div class="menu-option">
+    <span>Traducción de llamadas</span>
+    <label class="switch">
+      <input type="checkbox" id="toggleTranslateCalls" />
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="menu-option">
+    <span>Subtítulos en tiempo real</span>
+    <label class="switch">
+      <input type="checkbox" id="toggleSubtitles" />
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="menu-option">
+    <span>Síntesis de voz</span>
+    <label class="switch">
+      <input type="checkbox" id="toggleSynthesis" />
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="menu-option">
+    <span>Traducción automática</span>
+    <label class="switch">
+      <input type="checkbox" id="toggleAutoTranslate" />
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+<!-- Resto de tu código HTML (chat, botones, etc.) -->
+<!-- --- Parte superior --- -->
 <audio id="messageSound" src="https://www.myinstants.com/media/sounds/mario-coin-sound-effect.mp3" preload="auto"></audio>
 <audio id="remoteAudio" autoplay></audio>
 
 <div class="main-screen">
   <div class="connection-panel">
     <span>Tu ID: <strong id="myId">Cargando...</strong></span>
-    <input id="friendIdInput" type="text" placeholder="ID de tu Anonimo">
+    <input id="friendIdInput" type="text" placeholder="ID de tu amigo" />
     <button onclick="connectToFriend()">Conectar</button>
     <div id="connectionStatus">Desconectado</div>
   </div>
+  <!-- Header -->
   <div class="header"><div class="header-title">WhatsApp</div></div>
   <div class="search"><input type="text" placeholder="Buscar..."></div>
+  <!-- Lista de chats -->
   <div class="chat-list">
     <div class="chat-item meta-ai" onclick="openChat('META AI')">
       <div class="chat-avatar meta-ai-avatar"></div>
@@ -116,17 +322,17 @@
         <div class="chat-name">META AI<img src="https://i.ibb.co/cKqb8ys0/ic-verified-blue-16.webp" class="verified-icon" alt="Verificado"></div>
         <div class="chat-message">Pregúntame lo que quieras...</div>
       </div>
+      <div class="chat-time"></div>
     </div>
-    <div class="chat-item" onclick="openChat('Anonimo Online')">
+    <div class="chat-item" onclick="openChat('Amigo Online')">
       <div class="chat-avatar"></div>
-      <div class="chat-info">
-        <div class="chat-name" id="friendNameLabel">Anonimo Online</div>
-        <div class="chat-message">Chat P2P con tu Anonimo...</div>
-      </div>
+      <div class="chat-info"><div class="chat-name" id="friendNameLabel">Amigo Online</div><div class="chat-message"></div></div>
+      <div class="chat-time"></div>
     </div>
   </div>
 </div>
 
+<!-- Pantalla de chat -->
 <div class="chat-screen">
   <div class="chat-header">
     <div class="chat-header-left">
@@ -155,8 +361,8 @@
     </div>
     <div class="chat-input">
       <div class="attach-button" id="attachButton">📎</div>
-      <input type="file" id="fileInput" accept=".vcf">
-      <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
+      <input type="file" id="fileInput" accept=".vcf" />
+      <input type="text" id="messageInput" placeholder="Escribe un mensaje..." />
       <div class="send-button" id="sendButton">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </div>
@@ -164,6 +370,7 @@
   </div>
 </div>
 
+<!-- Perfil del contacto -->
 <div class="profile-screen" id="profileScreen">
     <div class="profile-header">
         <div class="back-button" onclick="closeProfileInfo()">←</div>
@@ -173,349 +380,203 @@
         <div class="profile-avatar"></div>
         <div class="profile-name">
             META AI
-            <img src="https://i.ibb.co/cKqb8ys0/ic-verified-blue-16.webp" class="verified-icon" alt="Verificado">
+            <img src="https://i.ibb.co/cKqb8ys0/ic-verified-blue-16.webp" class="verified-icon" alt="Verificado" />
         </div>
         <p class="profile-description">La IA genera los mensajes. Algunos pueden ser imprecisos o inapropiados.</p>
     </div>
 </div>
 
+<!-- Scripts -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-// --- ELEMENTOS DEL DOM ---
-const myIdSpan = document.getElementById('myId');
-const friendIdInput = document.getElementById('friendIdInput');
-const connectionStatus = document.getElementById('connectionStatus');
-const friendNameLabel = document.getElementById('friendNameLabel');
-const chatScreen = document.querySelector('.chat-screen');
-const messageInput = document.getElementById('messageInput');
-const sendButton = document.getElementById('sendButton');
-const chatMessages = document.getElementById('chatMessages');
-const chatHeaderText = document.getElementById('chatHeaderText');
-const verifiedIconHeader = document.getElementById('verifiedIconHeader');
-const chatHeaderAvatar = document.querySelector('.chat-header-avatar');
-const chatHeaderInfo = document.getElementById('chatHeaderInfo');
-const profileScreen = document.getElementById('profileScreen');
-const attachButton = document.getElementById('attachButton');
-const fileInput = document.getElementById('fileInput');
-const messageSound = document.getElementById('messageSound');
-const remoteAudio = document.getElementById('remoteAudio');
-const replyPreview = document.getElementById('replyPreview');
-const closeReply = document.getElementById('closeReply');
+  // --- ELEMENTOS DEL DOM ---
+  const myIdSpan = document.getElementById('myId');
+  const friendIdInput = document.getElementById('friendIdInput');
+  const connectionStatus = document.getElementById('connectionStatus');
+  const friendNameLabel = document.getElementById('friendNameLabel');
+  const chatScreen = document.querySelector('.chat-screen');
+  const messageInput = document.getElementById('messageInput');
+  const sendButton = document.getElementById('sendButton');
+  const chatMessages = document.getElementById('chatMessages');
+  const chatHeaderText = document.getElementById('chatHeaderText');
+  const messageSound = document.getElementById('messageSound');
+  const remoteAudio = document.getElementById('remoteAudio');
 
-// --- ESTADO DE LA APLICACIÓN ---
-const chatHistories = {};
-let currentChat = '';
-let myPeerId = null;
-let currentConn = null;
-let myStream = null;
-let messageToReply = null;
-const peer = new Peer();
-// Carga la API key del usuario desde el almacenamiento local al iniciar
-let userApiKey = localStorage.getItem('userApiKey') || null;
+  // --- ESTADO ---
+  const chatHistories = {};
+  let currentChat = '';
+  let myPeerId = null;
+  let currentConn = null;
+  let myStream = null;
+  const peer = new Peer();
 
-// --- LÓGICA DE CONEXIÓN (PEERJS) ---
-peer.on('open', id => { myPeerId = id; myIdSpan.textContent = id; });
-peer.on('error', err => { console.error('Error de PeerJS:', err); alert('Error de conexión.'); });
-peer.on('connection', conn => setupConnection(conn));
-peer.on('call', async call => {
-  try {
-    myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    call.answer(myStream);
-    call.on('stream', remoteStream => { remoteAudio.srcObject = remoteStream; });
-    alert(`Llamada entrante de ${call.peer}, contestando...`);
-  } catch (err) { console.error('Error al responder llamada:', err); }
-});
-
-function connectToFriend() {
-  const friendId = friendIdInput.value.trim();
-  if (!friendId || friendId === myPeerId) return alert('ID de Anonimo inválido.');
-  if (currentConn) currentConn.close();
-  const conn = peer.connect(friendId);
-  setupConnection(conn);
-}
-
-function setupConnection(conn) {
-  conn.on('open', () => {
-    currentConn = conn;
-    connectionStatus.textContent = `Conectado a ${conn.peer.slice(0, 8)}...`;
-    connectionStatus.style.color = '#4CAF50';
-    friendNameLabel.textContent = `Anonimo (${conn.peer.slice(0, 8)}...)`;
+  // --- Funciones de conexión PeerJS ---
+  peer.on('open', id => {
+    myPeerId = id;
+    myIdSpan.textContent = id;
   });
-  conn.on('data', data => {
-    if (data.type === 'chat' && currentChat === 'Anonimo Online') {
-      createMessageElement(conn.peer, data.message, 'received', data.repliedTo);
-      if (document.hidden || !chatScreen.classList.contains('active')) {
-          messageSound.play();
-      }
-    }
+
+  peer.on('error', err => {
+    console.error('Error de PeerJS:', err);
+    alert('Error de conexión. Revisa la consola para más detalles.');
   });
-  conn.on('close', () => {
-    connectionStatus.textContent = 'Desconectado';
-    connectionStatus.style.color = '#ffc107';
-    friendNameLabel.textContent = 'Anonimo Online';
-    currentConn = null;
+
+  peer.on('connection', (conn) => {
+    setupConnection(conn);
   });
-}
 
-async function startCall() {
-  if (currentChat !== 'Anonimo Online' || !currentConn) return alert('Debes estar en el chat de "Anonimo Online" y conectado para llamar.');
-  try {
-    myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const call = peer.call(currentConn.peer, myStream);
-    call.on('stream', remoteStream => { remoteAudio.srcObject = remoteStream; });
-    alert(`Llamando a ${currentConn.peer}...`);
-  } catch (err) { alert('No se pudo acceder al micrófono.'); }
-}
-
-// --- LÓGICA DEL CHAT ---
-function openChat(chatName) {
-  if (chatName === 'Anonimo Online' && !currentConn) {
-    return alert('Primero conéctate con un Anonimo para usar este chat.');
-  }
-  
-  currentChat = chatName;
-  chatHeaderText.textContent = chatName === 'Anonimo Online' ? friendNameLabel.textContent : chatName;
-  chatMessages.innerHTML = ''; 
-
-  if (!chatHistories[chatName]) chatHistories[chatName] = [];
-  
-  // Lógica para el mensaje inicial de META AI
-  if (chatName === 'META AI' && chatHistories[chatName].length === 0) {
-      if (!userApiKey) {
-          chatHistories[chatName].push({ sender: 'META AI', text: 'Para usar Meta AI, por favor pega tu clave de API (por ejemplo de OpenRouter) y presiona enviar. Tu clave se guardará en tu navegador.', type: 'received' });
-      } else {
-          chatHistories[chatName].push({ sender: 'META AI', text: '¡Hola de nuevo! ¿En qué puedo ayudarte?', type: 'received' });
-      }
-  }
-
-  chatHistories[chatName].forEach(msg => {
-    if (msg.isContactCard) {
-      displayContactCard(msg.contacts, false);
-    } else {
-      createMessageElement(msg.sender, msg.text, msg.type, msg.repliedTo, false);
-    }
-  });
-  
-  if (chatName === 'META AI') {
-    chatHeaderAvatar.classList.add('meta-ai-avatar');
-    verifiedIconHeader.style.display = 'inline-block';
-  } else {
-    chatHeaderAvatar.classList.remove('meta-ai-avatar');
-    verifiedIconHeader.style.display = 'none';
-  }
-  
-  chatScreen.classList.add('active');
-  setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 0);
-}
-
-function closeChat(){ chatScreen.classList.remove('active'); }
-function openProfileInfo() { profileScreen.classList.add('active'); }
-function closeProfileInfo() { profileScreen.classList.remove('active'); }
-
-function sendMessage(){
-  const messageText = messageInput.value.trim();
-  if (messageText === '') return;
-  
-  if (messageText === '.ctt') {
-    sendContactSpam();
-    messageInput.value = '';
-    return;
-  }
-
-  // --- LÓGICA MODIFICADA PARA GUARDAR LA API KEY ---
-  if (currentChat === 'META AI' && !userApiKey) {
-      userApiKey = messageText;
-      localStorage.setItem('userApiKey', userApiKey);
-      
-      messageInput.value = ''; // Limpiar el input
-
-      // Limpiar el historial visual y de datos
-      chatMessages.innerHTML = '';
-      chatHistories['META AI'] = [];
-      
-      // Mostrar mensaje de confirmación
-      const confirmText = "¡Clave guardada! Ahora puedes chatear conmigo.";
-      createMessageElement('META AI', confirmText, 'received');
-
-      // Detener la ejecución para no enviar la clave como un mensaje normal
-      return; 
-  }
-
-  if (currentChat === 'Anonimo Online') {
-    if (currentConn) {
-      currentConn.send({ type: 'chat', message: messageText, repliedTo: messageToReply });
-      createMessageElement('Tú', messageText, 'sent', messageToReply);
-    } else { alert('No estás conectado.'); return; }
-  } else {
-    createMessageElement('Tú', messageText, 'sent', messageToReply);
-    if (currentChat === 'META AI') {
-      getAIResponse(messageText);
-    }
-  }
-  
-  messageSound.play().catch(e => console.error("Error de sonido:", e));
-  messageInput.value = '';
-  messageToReply = null;
-  replyPreview.style.display = 'none';
-}
-
-function sendContactSpam() {
-  let count = 0;
-  const interval = setInterval(() => {
-    if (count >= 100) { clearInterval(interval); return; }
-    count++;
-    const dummyContacts = [{ name: `Contacto ${count}`, tel: `+00 000 000 0${String(count).padStart(2, '0')}` }];
-    displayContactCard(dummyContacts, true);
-  }, 100);
-}
-
-function createMessageElement(sender, text, type, repliedTo = null, saveToHistory = true) {
-  if (saveToHistory) {
-    if (!chatHistories[currentChat]) chatHistories[currentChat] = [];
-    chatHistories[currentChat].push({ sender, text, type, repliedTo });
-  }
-  const messageElement = document.createElement('div');
-  messageElement.classList.add('message', type);
-
-  let messageHTML = '';
-  if (repliedTo) {
-    messageHTML += `<div class="quoted-reply"><div class="quoted-sender">${repliedTo.sender}</div><div class="quoted-text">${repliedTo.text}</div></div>`;
-  }
-  messageHTML += `<div>${text}</div>`;
-  messageElement.innerHTML = messageHTML;
-  messageElement.addEventListener('click', () => {
-    const senderName = (type === 'sent') ? 'Tú' : (sender === 'META AI' ? 'META AI' : friendNameLabel.textContent);
-    selectMessageToReply(senderName, text);
-  });
-  chatMessages.appendChild(messageElement);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-function selectMessageToReply(senderName, messageText) {
-  messageToReply = { sender: senderName, text: messageText };
-  document.getElementById('replyPreviewSender').textContent = senderName;
-  document.getElementById('replyPreviewText').textContent = messageText;
-  replyPreview.style.display = 'block';
-  messageInput.focus();
-}
-closeReply.addEventListener('click', () => {
-  messageToReply = null;
-  replyPreview.style.display = 'none';
-});
-
-// --- FUNCIÓN DE IA ACTUALIZADA ---
-async function getAIResponse(userMessage) {
-    // Verificar si la clave de API ha sido configurada
-    if (!userApiKey) {
-        createMessageElement('META AI', 'Por favor, configura tu clave de API primero.', 'received');
-        return;
-    }
-
-    const typingIndicator = document.createElement('div');
-    typingIndicator.classList.add('message', 'received');
-    typingIndicator.innerHTML = `<div>escribiendo...</div>`;
-    chatMessages.appendChild(typingIndicator);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    // Usaremos la API de OpenRouter.ai que es compatible con la clave que proporcionaste
-    const API_URL = "https://openrouter.ai/api/v1/chat/completions";
-
-    const requestOptions = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userApiKey}` // Usa la clave guardada del usuario
-        },
-        body: JSON.stringify({
-            model: "openai/gpt-3.5-turbo", // Puedes cambiar el modelo si usas OpenRouter
-            messages: [{ role: "user", content: userMessage }]
-        })
-    };
-
+  peer.on('call', async (call) => {
     try {
-        const response = await fetch(API_URL, requestOptions);
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error ? data.error.message : `Error HTTP: ${response.status}`);
-        }
-        
-        const aiMessage = data.choices[0].message.content;
-        
-        typingIndicator.remove();
-        createMessageElement('META AI', aiMessage, 'received');
-
-    } catch (error) {
-        console.error("Error al contactar la API:", error);
-        typingIndicator.remove();
-        const errorMessage = `Lo siento, hubo un error. Verifica que tu API Key sea correcta y tenga fondos. (Error: ${error.message})`;
-        createMessageElement('META AI', errorMessage, 'received');
-    }
-}
-
-
-attachButton.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', (event) => {
-  const file = event.target.files[0];
-  if (!file || !file.name.toLowerCase().endsWith('.vcf')) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const contacts = parseVCF(e.target.result);
-    if (contacts.length > 0) displayContactCard(contacts);
-    else alert("No se pudieron leer contactos del archivo .vcf.");
-  };
-  reader.readAsText(file);
-  fileInput.value = '';
-});
-
-function parseVCF(vcfContent) {
-  const contacts = [];
-  const cards = vcfContent.split(/END:VCARD/i);
-  cards.forEach(card => {
-    if (card.trim() === '') return;
-    let name = "Sin nombre", tel = "Sin número";
-    const nameMatch = card.match(/^(FN|FN;CHARSET=UTF-8):(.*)$/im);
-    if (nameMatch && nameMatch[2]) name = nameMatch[2].trim();
-    const telMatch = card.match(/^(TEL;.*|TEL):(.*)$/im);
-    if (telMatch && telMatch[2]) tel = telMatch[2].trim();
-    if (name !== "Sin nombre" || tel !== "Sin número") {
-      contacts.push({ name, tel });
+      myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      call.answer(myStream);
+      call.on('stream', (remoteStream) => {
+        remoteAudio.srcObject = remoteStream;
+      });
+    } catch (err) {
+      console.error('Error al responder la llamada:', err);
     }
   });
-  return contacts;
-}
 
-function displayContactCard(contacts, saveToHistory = true) {
-  if (saveToHistory) {
-    messageSound.currentTime = 0; 
-    messageSound.play().catch(e => console.error("Error de sonido:", e));
-    if (currentChat) chatHistories[currentChat].push({ isContactCard: true, contacts: contacts });
+  function connectToFriend() {
+    const friendId = friendIdInput.value.trim();
+    if (!friendId || friendId === myPeerId) return alert('Por favor, introduce un ID de amigo válido.');
+    const conn = peer.connect(friendId);
+    setupConnection(conn);
   }
 
-  const messageElement = document.createElement('div');
-  messageElement.classList.add('message', 'sent', 'message-vcf');
-  
-  const limitedContacts = contacts.slice(0, 3);
-  const totalAvatars = limitedContacts.length;
-  
-  const avatars = limitedContacts.map((contact, index) => `<img src="https://i.ibb.co/ZpzCHmBX/avatar-contact.webp" alt="avatar" style="z-index:${totalAvatars - index};">`).join('');
-  let more = contacts.length > 3 ? `<div class="more-contacts" style="z-index:0;">+${contacts.length - 3}</div>` : '';
-  
-  const cardTitle = contacts.length === 1 ? contacts[0].name : `${contacts.length} contactos`;
-  const cardSubtitle = contacts.length === 1 ? contacts[0].tel : '';
+  function setupConnection(conn) {
+    currentConn = conn;
+    connectionStatus.textContent = "Conectando...";
+    conn.on('open', () => {
+      connectionStatus.textContent = `Conectado a ${conn.peer}`;
+      connectionStatus.style.color = '#4CAF50';
+    });
+    conn.on('data', (data) => {
+      if (data.type === 'chat') {
+        createMessageElement(conn.peer, data.message, 'received');
+        messageSound.play();
+      }
+    });
+    conn.on('close', () => {
+      connectionStatus.textContent = 'Desconectado';
+      connectionStatus.style.color = '#ffc107';
+      currentConn = null;
+    });
+  }
 
-  messageElement.innerHTML = `<div class="contact-card"><div class="contact-card-header"><div class="contact-avatars">${avatars}${more}</div><div class="contact-info"><div class="contact-name">${cardTitle}</div><div class="contact-phone">${cardSubtitle}</div></div></div><div class="contact-card-footer" onclick="alert('Acción: Ver o agregar contacto(s)')">Ver contacto(s)</div></div>`;
-  
-  messageElement.addEventListener('click', () => { selectMessageToReply('Tú', '[Tarjeta de Contacto]'); });
-  
-  chatMessages.appendChild(messageElement);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
+  // --- Llamadas ---
+  async function startCall() {
+    if (!currentConn) return alert('Debes estar conectado a un amigo para llamar.');
+    try {
+      myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const call = peer.call(currentConn.peer, myStream);
+      call.on('stream', (remoteStream) => {
+        remoteAudio.srcObject = remoteStream;
+      });
+    } catch (err) {
+      console.error('Error al iniciar la llamada:', err);
+      alert('No se pudo acceder al micrófono.');
+    }
+  }
 
-// --- Asignación de Event Listeners ---
-sendButton.addEventListener('click', sendMessage);
-messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-chatHeaderInfo.addEventListener('click', () => { if (currentChat === 'META AI') openProfileInfo(); });
+  // --- Chat ---
+  function openChat(chatName) {
+    if (chatName === 'Amigo Online' && !currentConn) {
+      return alert('Primero conéctate con un amigo para usar este chat.');
+    }
+    currentChat = chatName;
+    chatHeaderText.textContent = chatName;
+    chatMessages.innerHTML = '';
+    if (!chatHistories[chatName]) {
+      chatHistories[chatName] = [];
+      if (chatName === 'META AI' && !chatHistories[chatName].length) {
+        chatHistories[chatName].push({ sender: 'META AI', text: 'Hola! ¿Cómo estás? ¿Necesitas ayuda con algo?', type: 'received' });
+      }
+    }
+    chatHistories[chatName].forEach(msg => {
+      createMessageElement(msg.sender, msg.text, msg.type, null, false);
+    });
+    chatScreen.classList.add('active');
+    setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 0);
+  }
+  function closeChat() { chatScreen.classList.remove('active'); }
+
+  function sendMessage() {
+    const messageText = messageInput.value;
+    if (messageText.trim() === '') return;
+    if (currentChat === 'Amigo Online' && currentConn) {
+      currentConn.send({ type: 'chat', message: messageText });
+      createMessageElement('Tú', messageText, 'sent');
+    } else if (currentChat !== 'Amigo Online') {
+      createMessageElement('Tú', messageText, 'sent');
+    } else {
+      alert('No estás conectado a nadie para enviar este mensaje.');
+    }
+    messageInput.value = '';
+  }
+
+  function createMessageElement(sender, text, type, repliedTo = null, saveToHistory = true) {
+    if (saveToHistory && currentChat) {
+      if (!chatHistories[currentChat]) chatHistories[currentChat] = [];
+      chatHistories[currentChat].push({ sender, text, type, repliedTo });
+    }
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', type);
+    let senderName = (sender === 'Tú' || sender === myPeerId) ? 'Tú' : friendNameLabel.textContent;
+    if (type === 'received') senderName = friendNameLabel.textContent;
+    messageElement.innerHTML = `<div><strong>${senderName}:</strong> ${text}</div>`;
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // --- Event listeners ---
+  document.getElementById('sendButton').addEventListener('click', sendMessage);
+  document.getElementById('messageInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  // --- Configuración de opciones ---
+  const settingsBtn = document.getElementById('settingsBtn');
+  const bottomSheet = document.getElementById('bottomSheet');
+
+  settingsBtn.addEventListener('click', () => {
+    bottomSheet.classList.toggle('active');
+  });
+
+  const translateCallsCheckbox = document.getElementById('toggleTranslateCalls');
+  const subtitlesCheckbox = document.getElementById('toggleSubtitles');
+  const synthesisCheckbox = document.getElementById('toggleSynthesis');
+  const autoTranslateCheckbox = document.getElementById('toggleAutoTranslate');
+
+  // Funciones para las opciones
+  translateCallsCheckbox.addEventListener('change', () => {
+    if (translateCallsCheckbox.checked) {
+      alert('Función de traducción de llamadas activada');
+    } else {
+      alert('Función de traducción de llamadas desactivada');
+    }
+  });
+  subtitlesCheckbox.addEventListener('change', () => {
+    if (subtitlesCheckbox.checked) {
+      alert('Subtítulos en tiempo real activados');
+    } else {
+      alert('Subtítulos en tiempo real desactivados');
+    }
+  });
+  synthesisCheckbox.addEventListener('change', () => {
+    if (synthesisCheckbox.checked) {
+      alert('Síntesis de voz activada');
+    } else {
+      alert('Síntesis de voz desactivada');
+    }
+  });
+  autoTranslateCheckbox.addEventListener('change', () => {
+    if (autoTranslateCheckbox.checked) {
+      alert('Traducción automática activada');
+    } else {
+      alert('Traducción automática desactivada');
+    }
+  });
 </script>
 </body>
-  </html>
+</html>
