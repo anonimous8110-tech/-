@@ -1,320 +1,158 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>WhatsApp Online</title>
-<style>
-  /* --- CSS General --- */
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100%; background:#000; overflow:hidden; font-family:"Segoe UI", Roboto, Arial, sans-serif; color:#fff; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WhatsApp Online — con Assistant Call Bottom Sheet</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; background:#000; overflow:hidden; }
+    body { font-family:"Segoe UI", Roboto, Arial, sans-serif; color:#fff; display:flex; flex-direction:column; }
 
-  body { display:flex; flex-direction:column; }
+    /* --- PANEL DE CONEXIÓN --- */
+    .connection-panel {
+      background: #1a1a1a;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.9em;
+      border-bottom: 1px solid #333;
+    }
+    .connection-panel input { background: #333; border: 1px solid #555; color: #fff; padding: 5px; border-radius: 5px; margin: 0 5px; }
+    .connection-panel button { background: #00a884; color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+    #connectionStatus { color: #ffc107; margin-top: 5px; font-weight: bold; }
 
-  /* --- Panel de Conexión --- */
-  .connection-panel {
-    background: #1a1a1a;
-    padding: 10px;
-    text-align: center;
-    font-size: 0.9em;
-    border-bottom: 1px solid #333;
-  }
-  .connection-panel input {
-    background: #333;
-    border: 1px solid #555;
-    color: #fff;
-    padding: 5px;
-    border-radius: 5px;
-    margin: 0 5px;
-  }
-  .connection-panel button {
-    background: #00a884;
-    color: #fff;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  #connectionStatus {
-    color: #ffc107;
-    margin-top: 5px;
-    font-weight: bold;
-  }
+    .header { display:flex; align-items:center; padding:10px 15px; background:#000; border-bottom:none; }
+    .header-title { font-size:20px; font-weight:500; color:#fff; }
+    .search { padding:10px; background:#000; margin:10px 12px 0 12px; border-radius:10px; }
+    .search input { width:100%; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#1a1a1a; color:#fff; font-size:14px; }
+    .chat-list { flex:1; overflow-y:auto; background:#000; padding:6px 12px 12px 12px; }
+    .chat-item { display:flex; align-items:center; padding:14px 12px 14px 18px; background:#1a1a1a; margin-bottom:12px; border-radius:10px; position:relative; transition:background 0.2s; cursor:pointer; }
+    .chat-item:hover { background:#222; }
+    .chat-item::before { content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:#eee; border-top-left-radius:10px; border-bottom-left-radius:10px; }
+    .chat-item.meta-ai::before { background:linear-gradient(45deg, #6a11cb, #2575fc); }
+    .chat-avatar { width:45px; height:45px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; flex-shrink:0; }
+    .chat-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
+    .chat-info { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+    .chat-name { font-size:15px; font-weight:500; color:#fff; margin-bottom:2px; display:flex; align-items:center; gap:4px; }
+    .verified-icon { width:16px; height:16px; }
+    .chat-message { font-size:13px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background: rgba(255,255,255,0.05); padding:6px 10px; border-radius:8px; }
+    .chat-time { font-size:12px; color:#777; margin-left:8px; white-space:nowrap; }
 
-  /* ===== Header ===== */
-  .header { display:flex; align-items:center; padding:10px 15px; background:#000; border-bottom:none; }
-  .header-title { font-size:20px; font-weight:500; color:#fff; }
+    .chat-screen { position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: #000; display: flex; flex-direction: column; transition: left 0.3s ease; z-index: 10; }
+    .chat-screen.active { left:0; }
+    .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background: #1a1a1a; flex-shrink: 0; }
+    .chat-header-left { display:flex; align-items:center; }
+    .back-button { font-size:24px; margin-right:15px; cursor:pointer; }
+    .chat-header-info { display:flex; align-items:center; cursor:pointer; }
+    .chat-header-avatar { width:40px; height:40px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; }
+    .chat-header-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
+    .chat-header-name { font-size:16px; font-weight:500; display:flex; align-items:center; gap:5px; }
+    .call-buttons { display:flex; gap:10px; }
+    .call-buttons svg { width:24px; height:24px; cursor:pointer; fill:#00a884; }
 
-  /* Buscador */
-  .search { padding:10px; background:#000; margin:10px 12px 0 12px; border-radius:10px; }
-  .search input { width:100%; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#1a1a1a; color:#fff; font-size:14px; }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
+    .message { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; position: relative; cursor: pointer; white-space: pre-wrap; word-break: break-word; }
+    .message.sent { background: rgba(255,255,255,0.1); align-self:flex-end; }
+    .message.received { background: rgba(255,255,255,0.05); align-self:flex-start; }
 
-  /* Lista de chats */
-  .chat-list { flex:1; overflow-y:auto; background:#000; padding:6px 12px 12px 12px; }
-  .chat-item { display:flex; align-items:center; padding:14px 12px 14px 18px; background:#1a1a1a; margin-bottom:12px; border-radius:10px; position:relative; transition:background 0.2s; cursor:pointer; }
-  .chat-item:hover { background:#222; }
-  .chat-item::before { content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:#eee; border-top-left-radius:10px; border-bottom-left-radius:10px; }
-  .chat-item.meta-ai::before { background:linear-gradient(45deg, #6a11cb, #2575fc); }
-  .chat-avatar { width:45px; height:45px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; flex-shrink:0; }
-  .chat-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
-  .chat-info { flex:1; overflow:hidden; display:flex; flex-direction:column; }
-  .chat-name { font-size:15px; font-weight:500; color:#fff; margin-bottom:2px; display:flex; align-items:center; gap:4px; }
-  .verified-icon { width:16px; height:16px; }
-  .chat-message { font-size:13px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background: rgba(255,255,255,0.05); padding:6px 10px; border-radius:8px; }
-  .chat-time { font-size:12px; color:#777; margin-left:8px; white-space:nowrap; }
+    .message-vcf { padding: 0 !important; background: transparent !important; cursor: pointer; }
+    .contact-card { background:#1E2C31; padding:0; border-radius:10px; overflow:hidden; max-width:280px; cursor:default; }
+    .contact-card-header { display:flex; align-items:center; padding:12px; overflow: hidden; }
+    .contact-avatars { display:flex; align-items:center; position:relative; }
+    .contact-avatars img, .contact-avatars .more-contacts { width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid #1E2C31; position:relative; margin-left:-22px; flex-shrink: 0; }
+    .contact-avatars img:first-child, .contact-avatars .more-contacts:first-child { margin-left:0; }
+    .contact-avatars .more-contacts { background:#2a3a41; color:#fff; font-size:14px; font-weight:bold; display:flex; align-items:center; justify-content:center; }
+    .contact-info { display:flex; flex-direction:column; margin-left:10px; overflow: hidden; }
+    .contact-name, .contact-phone { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contact-name { font-weight:bold; color:#fff; }
+    .contact-phone { font-size:0.9em; color:#ddd; }
+    .contact-card-footer { padding:12px; border-top:1px solid #2a3a41; text-align:center; cursor:pointer; color:#00a884; font-weight:500; }
+    .contact-card-footer:hover { background:#2a3a41; }
+    
+    .chat-input-wrapper { background: #1a1a1a; flex-shrink: 0; }
+    .reply-preview { display: none; padding: 8px 15px 0 15px; }
+    .reply-preview-content { background: #000; padding: 8px; border-radius: 6px; border-left: 3px solid #6a11cb; position: relative; }
+    .reply-preview-sender { font-weight: bold; color: #6a11cb; }
+    .reply-preview-text { font-size: 0.9em; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 20px;}
+    .close-reply { position: absolute; top: 5px; right: 10px; cursor: pointer; font-size: 20px; line-height: 1; color: #777; }
+    .quoted-reply { background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; margin-bottom: 5px; border-left: 3px solid #6a11cb; overflow: hidden; }
+    .quoted-sender { font-weight: bold; color: #6a11cb; font-size: 0.9em; }
+    .quoted-text { font-size: 0.9em; color: #ccc; white-space: pre-wrap; word-break: break-word; max-height: 60px; overflow: hidden; text-overflow: ellipsis; }
 
-  /* --- Chat Screen --- */
-  .chat-screen {
-    position: fixed;
-    top: 0;
-    left: 100%;
-    width: 100%;
-    height: 100vh;
-    background: #000;
-    display: flex;
-    flex-direction: column;
-    transition: left 0.3s ease;
-    z-index: 10;
-  }
-  .chat-screen.active { left:0; }
+    .chat-input { display:flex; align-items:center; padding:10px; }
+    .attach-button { margin-right:10px; cursor:pointer; font-size:24px; transform:rotate(45deg); }
+    .chat-input input[type="text"] { flex:1; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#333; color:#fff; font-size:14px; margin-right:10px; }
+    .chat-input input[type="file"] { display:none; }
+    .send-button { width:40px; height:40px; border-radius:50%; background:#00a884; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    
+    .profile-screen { position: fixed; top: 0; left: 100%; width: 100%; height: 100%; background-color: #000; z-index: 20; transition: left 0.3s ease; display: flex; flex-direction: column; }
+    .profile-screen.active { left: 0; }
+    .profile-header { display: flex; align-items: center; padding: 10px 15px; background-color: #1a1a1a; flex-shrink: 0; }
+    .profile-header-title { font-size: 18px; font-weight: 500; }
+    .profile-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 50px; text-align: center; }
+    .profile-avatar { width: 120px; height: 120px; border-radius: 50%; background: #222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; margin-bottom: 20px; }
+    .profile-name { font-size: 22px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; }
+    .profile-description { font-size: 15px; color: #aaa; max-width: 80%; }
 
-  /* Header del chat */
-  .chat-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 15px;
-    background: #1a1a1a;
-    flex-shrink: 0;
-  }
-  .chat-header-left { display:flex; align-items:center; }
-  .back-button { font-size:24px; margin-right:15px; cursor:pointer; }
-  .chat-header-info { display:flex; align-items:center; cursor:pointer; }
-  .chat-header-avatar { width:40px; height:40px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-right:12px; }
-  .chat-header-avatar.meta-ai-avatar { background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; }
-  .chat-header-name { font-size:16px; font-weight:500; display:flex; align-items:center; gap:5px; }
+    /* === BOTTOM SHEET (CALL UI) === */
+    .call-bottom-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: -110%;
+      background: linear-gradient(180deg,#131313,#0f1314);
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.7);
+      transition: bottom 0.35s ease;
+      z-index: 60;
+      color: #fff;
+      text-align: center;
+      padding-bottom: 18px;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+    .call-bottom-sheet.active { bottom: 0; }
 
-  /* botones de llamada */
-  .call-buttons { display:flex; gap:10px; }
-  .call-buttons svg { width:24px; height:24px; cursor:pointer; fill:#00a884; }
+    .call-sheet-header { padding: 10px; }
+    .drag-bar { width: 56px; height: 5px; background: #2a2a2a; border-radius: 4px; margin: 0 auto; }
 
-  /* mensajes del chat */
-  .chat-messages {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .message {
-    max-width: 70%;
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    position: relative;
-    cursor: pointer;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .message.sent { background: rgba(255,255,255,0.1); align-self:flex-end; }
-  .message.received { background: rgba(255,255,255,0.05); align-self:flex-start; }
+    .call-sheet-content { display:flex; flex-direction:column; align-items:center; padding: 14px 20px 26px 20px; }
+    .call-avatar { width:84px; height:84px; border-radius:50%; background:#222 url('https://i.ibb.co/LDzDFcBC/Picsart-25-09-20-21-09-11-988.png') center/cover no-repeat; margin-bottom: 10px; border: 3px solid rgba(255,255,255,0.03); }
+    .call-name { font-size:18px; font-weight:600; margin-bottom:4px; }
+    .call-status { font-size:13px; color:#bdbdbd; margin-bottom:12px; }
 
-  /* Input del chat */
-  .chat-input-wrapper { background: #1a1a1a; flex-shrink: 0; }
-  .reply-preview { display: none; padding: 8px 15px 0 15px; }
-  .reply-preview-content { background: #000; padding: 8px; border-radius: 6px; border-left: 3px solid #6a11cb; position: relative; }
-  .reply-preview-sender { font-weight: bold; color: #6a11cb; }
-  .reply-preview-text { font-size: 0.9em; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 20px;}
-  .close-reply { position: absolute; top: 5px; right: 10px; cursor:pointer; font-size:20px; color:#777; }
-  .quoted-reply { background: rgba(0,0,0,0.25); padding:8px; border-radius:6px; margin-bottom:5px; border-left:3px solid #6a11cb; overflow:hidden; }
-  .quoted-sender { font-weight:bold; color:#6a11cb; font-size:0.9em; }
-  .quoted-text { font-size:0.9em; color:#ccc; white-space:pre-wrap; word-break:break-word; max-height:60px; overflow:hidden; text-overflow:ellipsis; }
+    .call-controls { display:flex; gap:12px; align-items:center; margin-bottom:10px; }
+    .call-btn {
+      width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; font-size:18px; color:#fff;
+      background:#242424;
+    }
+    .call-btn.end { background:#d32f2f; width:62px; height:62px; font-weight:700; border-radius:20px; }
 
-  .chat-input { display:flex; align-items:center; padding:10px; }
-  .attach-button { margin-right:10px; cursor:pointer; font-size:24px; transform:rotate(45deg); }
-  .chat-input input[type="text"] { flex:1; padding:8px 12px; border-radius:25px; border:1px solid #333; outline:none; background:#333; color:#fff; font-size:14px; margin-right:10px; }
-  .chat-input input[type="file"] { display:none; }
-  .send-button { width:40px; height:40px; border-radius:50%; background:#00a884; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .assistant-controls { width:100%; margin-top:10px; display:flex; gap:10px; flex-direction:column; align-items:stretch; }
+    .assistant-row { display:flex; gap:8px; align-items:center; justify-content:space-between; }
+    .assistant-row .label { font-size:13px; color:#cfcfcf; }
+    .assistant-row select, .assistant-row input[type="range"] { background:#121212; color:#fff; border:1px solid #222; padding:6px 8px; border-radius:8px; }
+    .small-btn { padding:8px 10px; border-radius:10px; border:none; background:#00a884; color:#fff; cursor:pointer; font-weight:600; }
+    .small-btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.04); color:#fff; }
 
-  /* Perfil del contacto */
-  .profile-screen {
-    position: fixed;
-    top: 0; left: 100%;
-    width: 100%; height: 100%;
-    background-color: #000;
-    z-index: 20;
-    transition: left 0.3s ease;
-    display: flex;
-    flex-direction: column;
-  }
-  .profile-screen.active { left:0; }
-  .profile-header {
-    display:flex; align-items:center; padding:10px 15px; background:#1a1a1a; flex-shrink:0;
-  }
-  .profile-header-title { font-size:18px; font-weight:500; }
-  .profile-content {
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:50px; text-align:center;
-  }
-  .profile-avatar {
-    width:120px; height:120px; border-radius:50%; background:#222 url('https://i.ibb.co/Cs5wy1RF/meta-ai-ring.webp') center/cover no-repeat; margin-bottom:20px;
-  }
-  .profile-name {
-    font-size:22px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:15px;
-  }
-  .profile-description {
-    font-size:15px; color:#aaa; max-width:80%;
-  }
-
-  /* --- Botón de configuración (tuerca) --- */
-  .settings-icon {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    background: #222;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    z-index: 999;
-  }
-  .settings-icon svg {
-    width: 24px;
-    height: 24px;
-    fill: #fff;
-  }
-
-  /* --- Menú bottom sheet --- */
-  .bottom-sheet {
-    position: fixed;
-    bottom: 0; left: 0;
-    width: 100%;
-    max-height: 300px;
-    background-color: #222;
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    overflow-y: auto;
-    padding: 20px;
-    z-index: 998;
-  }
-  .bottom-sheet.active {
-    transform: translateY(0);
-  }
-  /* Opciones del menú */
-  .menu-option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #444;
-  }
-  .menu-option:last-child {
-    border-bottom: none;
-  }
-  .menu-option span {
-    font-size: 14px;
-    color: #fff;
-  }
-  /* Switch styles */
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 20px;
-  }
-  .switch input { display:none; }
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 20px;
-  }
-  .slider:before {
-    position: absolute;
-    content: "";
-    height: 16px; width: 16px;
-    left: 2px; bottom: 2px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-  }
-  input:checked + .slider {
-    background-color: #00a884;
-  }
-  input:checked + .slider:before {
-    transform: translateX(20px);
-  }
-</style>
+    .speak-panel { display:flex; gap:8px; margin-top:8px; }
+    .speak-panel input { flex:1; padding:8px 10px; border-radius:12px; border:1px solid #222; background:#0f0f0f; color:#fff; }
+  </style>
 </head>
 <body>
 
-<!-- Tuerca para abrir el menú -->
-<div class="settings-icon" id="settingsBtn" title="Configuraciones">
-  <!-- Icono de tuerca -->
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.03-.66-.07-.98l2.11-1.65a.5.5 0 00.12-.66l-2-3.46a.5.5 0 00-.61-.2l-2.49 1a6.994 6.994 0 00-1.7-.98l-.38-2.65A.505.505 0 0014 2h-4c-.26 0-.47.19-.5.44l-.38 2.65c-.63.24-1.2.57-1.7.98l-2.49-1a.5.5 0 00-.61.2l-2 3.46c-.25.43-.09.99.12 1.34l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65a.5.5 0 00-.12.66l2 3.46c.25.43.66.55.98.3l2.49-1c.5.41 1.07.75 1.7.98l.38 2.65c.03.25.24.44.5.44h4c.26 0 .47-.19.5-.44l.38-2.65c.63-.24 1.2-.57 1.7-.98l2.49 1c.32.25.73.13.98-.3l2-3.46a.5.5 0 00-.61-.2l-2.49 1a6.994 6.994 0 00-1.7-.98l-.38-2.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
-  </svg>
-</div>
-
-<!-- Menú bottom sheet -->
-<div class="bottom-sheet" id="bottomSheet">
-  <h3 style="color:#fff; margin-bottom:15px;">Configuraciones</h3>
-  <!-- Opciones toggle -->
-  <div class="menu-option">
-    <span>Traducción de llamadas</span>
-    <label class="switch">
-      <input type="checkbox" id="toggleTranslateCalls" />
-      <span class="slider"></span>
-    </label>
-  </div>
-  <div class="menu-option">
-    <span>Subtítulos en tiempo real</span>
-    <label class="switch">
-      <input type="checkbox" id="toggleSubtitles" />
-      <span class="slider"></span>
-    </label>
-  </div>
-  <div class="menu-option">
-    <span>Síntesis de voz</span>
-    <label class="switch">
-      <input type="checkbox" id="toggleSynthesis" />
-      <span class="slider"></span>
-    </label>
-  </div>
-  <div class="menu-option">
-    <span>Traducción automática</span>
-    <label class="switch">
-      <input type="checkbox" id="toggleAutoTranslate" />
-      <span class="slider"></span>
-    </label>
-  </div>
-</div>
-
-<!-- Resto de tu código HTML (chat, botones, etc.) -->
-<!-- --- Parte superior --- -->
 <audio id="messageSound" src="https://www.myinstants.com/media/sounds/mario-coin-sound-effect.mp3" preload="auto"></audio>
 <audio id="remoteAudio" autoplay></audio>
 
 <div class="main-screen">
   <div class="connection-panel">
     <span>Tu ID: <strong id="myId">Cargando...</strong></span>
-    <input id="friendIdInput" type="text" placeholder="ID de tu amigo" />
+    <input id="friendIdInput" type="text" placeholder="ID de tu Anonimo">
     <button onclick="connectToFriend()">Conectar</button>
     <div id="connectionStatus">Desconectado</div>
   </div>
-  <!-- Header -->
   <div class="header"><div class="header-title">WhatsApp</div></div>
   <div class="search"><input type="text" placeholder="Buscar..."></div>
-  <!-- Lista de chats -->
   <div class="chat-list">
     <div class="chat-item meta-ai" onclick="openChat('META AI')">
       <div class="chat-avatar meta-ai-avatar"></div>
@@ -322,17 +160,17 @@
         <div class="chat-name">META AI<img src="https://i.ibb.co/cKqb8ys0/ic-verified-blue-16.webp" class="verified-icon" alt="Verificado"></div>
         <div class="chat-message">Pregúntame lo que quieras...</div>
       </div>
-      <div class="chat-time"></div>
     </div>
-    <div class="chat-item" onclick="openChat('Amigo Online')">
+    <div class="chat-item" onclick="openChat('Anonimo Online')">
       <div class="chat-avatar"></div>
-      <div class="chat-info"><div class="chat-name" id="friendNameLabel">Amigo Online</div><div class="chat-message"></div></div>
-      <div class="chat-time"></div>
+      <div class="chat-info">
+        <div class="chat-name" id="friendNameLabel">Anonimo Online</div>
+        <div class="chat-message">Chat P2P con tu Anonimo...</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Pantalla de chat -->
 <div class="chat-screen">
   <div class="chat-header">
     <div class="chat-header-left">
@@ -361,8 +199,8 @@
     </div>
     <div class="chat-input">
       <div class="attach-button" id="attachButton">📎</div>
-      <input type="file" id="fileInput" accept=".vcf" />
-      <input type="text" id="messageInput" placeholder="Escribe un mensaje..." />
+      <input type="file" id="fileInput" accept=".vcf">
+      <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
       <div class="send-button" id="sendButton">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </div>
@@ -370,7 +208,56 @@
   </div>
 </div>
 
-<!-- Perfil del contacto -->
+<!-- --- BOTTOM SHEET: UI de llamada y asistente --- -->
+<div class="call-bottom-sheet" id="callBottomSheet" aria-hidden="true">
+  <div class="call-sheet-header"><div class="drag-bar"></div></div>
+  <div class="call-sheet-content">
+    <div class="call-avatar" id="callAvatar"></div>
+    <div class="call-name" id="callName">Anonimo</div>
+    <div class="call-status" id="callStatus">Esperando...</div>
+
+    <div class="call-controls">
+      <button class="call-btn" id="btnMuteMic" title="Silenciar micrófono" onclick="toggleMuteMic()">🔇</button>
+      <button class="call-btn end" id="btnEndCall" title="Colgar" onclick="endCall()">⏹</button>
+      <button class="call-btn" id="btnToggleAssistant" title="Activar/Desactivar asistente" onclick="toggleAssistant()">🤖</button>
+    </div>
+
+    <div class="assistant-controls">
+      <div class="assistant-row">
+        <div class="label">Asistente activado</div>
+        <div><input type="checkbox" id="autoSpeakCheckbox" checked title="Al recibir mensajes, el asistente los leerá"></div>
+      </div>
+
+      <div class="assistant-row">
+        <div class="label">Traducir al</div>
+        <select id="translateTarget">
+          <option value="es-ES">Español</option>
+          <option value="en-US">Inglés</option>
+          <option value="pt-PT">Portugués</option>
+          <option value="fr-FR">Francés</option>
+          <!-- agrega más si quieres -->
+        </select>
+        <button class="small-btn ghost" id="btnTranslateToggle" onclick="toggleTranslate()">Traducir ON/OFF</button>
+      </div>
+
+      <div class="assistant-row">
+        <div class="label">Volumen</div>
+        <input type="range" id="assistantVolume" min="0" max="1" step="0.05" value="1">
+      </div>
+
+      <div class="speak-panel">
+        <input id="assistantSpeakInput" placeholder="Texto que quieres que diga el asistente...">
+        <button class="small-btn" onclick="assistantSpeakManual()">👉 Decir</button>
+        <button class="small-btn ghost" onclick="assistantSpeakAndSend()">📤 Decir y enviar</button>
+      </div>
+
+      <div style="font-size:12px;color:#9a9a9a;margin-top:8px;">
+        Nota: si el asistente está activado, el audio remoto se silenciará (tu no oirás a la otra voz). El asistente leerá mensajes de texto entrantes y opcionalmente los traducirá usando tu API Key guardada.
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="profile-screen" id="profileScreen">
     <div class="profile-header">
         <div class="back-button" onclick="closeProfileInfo()">←</div>
@@ -380,203 +267,700 @@
         <div class="profile-avatar"></div>
         <div class="profile-name">
             META AI
-            <img src="https://i.ibb.co/cKqb8ys0/ic-verified-blue-16.webp" class="verified-icon" alt="Verificado" />
+            <img src="https://i.ibb.co/cKqb8ys0/ic-verified-blue-16.webp" class="verified-icon" alt="Verificado">
         </div>
         <p class="profile-description">La IA genera los mensajes. Algunos pueden ser imprecisos o inapropiados.</p>
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-  // --- ELEMENTOS DEL DOM ---
-  const myIdSpan = document.getElementById('myId');
-  const friendIdInput = document.getElementById('friendIdInput');
-  const connectionStatus = document.getElementById('connectionStatus');
-  const friendNameLabel = document.getElementById('friendNameLabel');
-  const chatScreen = document.querySelector('.chat-screen');
-  const messageInput = document.getElementById('messageInput');
-  const sendButton = document.getElementById('sendButton');
-  const chatMessages = document.getElementById('chatMessages');
-  const chatHeaderText = document.getElementById('chatHeaderText');
-  const messageSound = document.getElementById('messageSound');
-  const remoteAudio = document.getElementById('remoteAudio');
+/* =========================
+   ELEMENTOS DEL DOM & ESTADO
+   ========================= */
+const myIdSpan = document.getElementById('myId');
+const friendIdInput = document.getElementById('friendIdInput');
+const connectionStatus = document.getElementById('connectionStatus');
+const friendNameLabel = document.getElementById('friendNameLabel');
+const chatScreen = document.querySelector('.chat-screen');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const chatMessages = document.getElementById('chatMessages');
+const chatHeaderText = document.getElementById('chatHeaderText');
+const verifiedIconHeader = document.getElementById('verifiedIconHeader');
+const chatHeaderAvatar = document.querySelector('.chat-header-avatar');
+const chatHeaderInfo = document.getElementById('chatHeaderInfo');
+const profileScreen = document.getElementById('profileScreen');
+const attachButton = document.getElementById('attachButton');
+const fileInput = document.getElementById('fileInput');
+const messageSound = document.getElementById('messageSound');
+const remoteAudio = document.getElementById('remoteAudio');
+const replyPreview = document.getElementById('replyPreview');
+const closeReply = document.getElementById('closeReply');
 
-  // --- ESTADO ---
-  const chatHistories = {};
-  let currentChat = '';
-  let myPeerId = null;
-  let currentConn = null;
-  let myStream = null;
-  const peer = new Peer();
+const callBottomSheet = document.getElementById('callBottomSheet');
+const callNameEl = document.getElementById('callName');
+const callStatusEl = document.getElementById('callStatus');
+const btnToggleAssistant = document.getElementById('btnToggleAssistant');
+const btnMuteMic = document.getElementById('btnMuteMic');
+const btnEndCall = document.getElementById('btnEndCall');
+const autoSpeakCheckbox = document.getElementById('autoSpeakCheckbox');
+const translateTarget = document.getElementById('translateTarget');
+const btnTranslateToggle = document.getElementById('btnTranslateToggle');
+const assistantVolumeInput = document.getElementById('assistantVolume');
+const assistantSpeakInput = document.getElementById('assistantSpeakInput');
 
-  // --- Funciones de conexión PeerJS ---
-  peer.on('open', id => {
-    myPeerId = id;
-    myIdSpan.textContent = id;
-  });
+let assistantActive = false;
+let translateEnabled = false;
+let currentCall = null;
+let isMutedMic = false;
+let assistantVolume = parseFloat(assistantVolumeInput.value);
+let autoSpeakOnReceive = autoSpeakCheckbox.checked;
 
-  peer.on('error', err => {
-    console.error('Error de PeerJS:', err);
-    alert('Error de conexión. Revisa la consola para más detalles.');
-  });
+const chatHistories = {};
+let currentChat = '';
+let myPeerId = null;
+let currentConn = null;
+let myStream = null;
+let messageToReply = null;
+const peer = new Peer();
+let userApiKey = localStorage.getItem('userApiKey') || null; // ya existente en tu app
 
-  peer.on('connection', (conn) => {
-    setupConnection(conn);
-  });
+/* =========================
+   PeerJS - Conexión & Llamadas
+   ========================= */
+peer.on('open', id => { myPeerId = id; myIdSpan.textContent = id; });
+peer.on('error', err => { console.error('Error de PeerJS:', err); alert('Error de conexión.'); });
 
-  peer.on('call', async (call) => {
-    try {
-      myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      call.answer(myStream);
-      call.on('stream', (remoteStream) => {
-        remoteAudio.srcObject = remoteStream;
-      });
-    } catch (err) {
-      console.error('Error al responder la llamada:', err);
-    }
-  });
+peer.on('connection', conn => setupConnection(conn));
 
-  function connectToFriend() {
-    const friendId = friendIdInput.value.trim();
-    if (!friendId || friendId === myPeerId) return alert('Por favor, introduce un ID de amigo válido.');
-    const conn = peer.connect(friendId);
-    setupConnection(conn);
+// cuando nos llaman
+peer.on('call', async call => {
+  try {
+    // guardamos referencia al call
+    currentCall = call;
+    // pedimos micrófono (si el usuario acepta)
+    myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    call.answer(myStream);
+    call.on('stream', remoteStream => {
+      // guardamos stream remoto en el audio element
+      remoteAudio.srcObject = remoteStream;
+      // si el asistente está activo, silenciar audio remoto (el asistente hablará en su lugar)
+      remoteAudio.muted = !!assistantActive;
+    });
+    call.on('close', () => handleCallEnded());
+    call.on('error', () => handleCallEnded());
+    showCallUI(call.peer, 'En llamada (contestada)');
+  } catch (err) {
+    console.error('Error al responder llamada:', err);
   }
+});
 
-  function setupConnection(conn) {
+function connectToFriend() {
+  const friendId = friendIdInput.value.trim();
+  if (!friendId || friendId === myPeerId) return alert('ID de Anonimo inválido.');
+  if (currentConn) currentConn.close();
+  const conn = peer.connect(friendId);
+  setupConnection(conn);
+}
+
+function setupConnection(conn) {
+  conn.on('open', () => {
     currentConn = conn;
-    connectionStatus.textContent = "Conectando...";
-    conn.on('open', () => {
-      connectionStatus.textContent = `Conectado a ${conn.peer}`;
-      connectionStatus.style.color = '#4CAF50';
-    });
-    conn.on('data', (data) => {
-      if (data.type === 'chat') {
-        createMessageElement(conn.peer, data.message, 'received');
-        messageSound.play();
+    connectionStatus.textContent = `Conectado a ${conn.peer.slice(0, 8)}...`;
+    connectionStatus.style.color = '#4CAF50';
+    friendNameLabel.textContent = `Anonimo (${conn.peer.slice(0, 8)}...)`;
+  });
+  conn.on('data', async data => {
+    // datos entrantes por data channel (chat)
+    if (data.type === 'chat' && currentChat === 'Anonimo Online') {
+      createMessageElement(conn.peer, data.message, 'received', data.repliedTo);
+      // si el asistente está activo y la opción auto speak está on, hablarlo
+      if (assistantActive && autoSpeakOnReceive) {
+        // si está activada la traducción, usamos translateThenSpeak (usa OpenRouter si hay API Key)
+        if (translateEnabled && userApiKey) {
+          await translateThenSpeak(data.message, translateTarget.value);
+        } else {
+          speakAssistant(data.message, translateTarget.value || 'es-ES');
+        }
       }
-    });
-    conn.on('close', () => {
-      connectionStatus.textContent = 'Desconectado';
-      connectionStatus.style.color = '#ffc107';
-      currentConn = null;
-    });
-  }
-
-  // --- Llamadas ---
-  async function startCall() {
-    if (!currentConn) return alert('Debes estar conectado a un amigo para llamar.');
-    try {
-      myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const call = peer.call(currentConn.peer, myStream);
-      call.on('stream', (remoteStream) => {
-        remoteAudio.srcObject = remoteStream;
-      });
-    } catch (err) {
-      console.error('Error al iniciar la llamada:', err);
-      alert('No se pudo acceder al micrófono.');
-    }
-  }
-
-  // --- Chat ---
-  function openChat(chatName) {
-    if (chatName === 'Amigo Online' && !currentConn) {
-      return alert('Primero conéctate con un amigo para usar este chat.');
-    }
-    currentChat = chatName;
-    chatHeaderText.textContent = chatName;
-    chatMessages.innerHTML = '';
-    if (!chatHistories[chatName]) {
-      chatHistories[chatName] = [];
-      if (chatName === 'META AI' && !chatHistories[chatName].length) {
-        chatHistories[chatName].push({ sender: 'META AI', text: 'Hola! ¿Cómo estás? ¿Necesitas ayuda con algo?', type: 'received' });
+      if (document.hidden || !chatScreen.classList.contains('active')) {
+        messageSound.play().catch(()=>{});
       }
     }
-    chatHistories[chatName].forEach(msg => {
-      createMessageElement(msg.sender, msg.text, msg.type, null, false);
-    });
-    chatScreen.classList.add('active');
-    setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 0);
-  }
-  function closeChat() { chatScreen.classList.remove('active'); }
+    // si llega "assistant_chat" (texto enviado por el otro como "hablado por asistente"), lo mostramos y opcionalmente lo leemos
+    if (data.type === 'assistant_chat' && currentChat === 'Anonimo Online') {
+      createMessageElement(conn.peer, `(Asistente remoto) ${data.text}`, 'received', null);
+      if (assistantActive && autoSpeakOnReceive) {
+        if (translateEnabled && userApiKey) {
+          await translateThenSpeak(data.text, translateTarget.value);
+        } else {
+          speakAssistant(data.text, translateTarget.value || 'es-ES');
+        }
+      }
+    }
+  });
+  conn.on('close', () => {
+    connectionStatus.textContent = 'Desconectado';
+    connectionStatus.style.color = '#ffc107';
+    friendNameLabel.textContent = 'Anonimo Online';
+    currentConn = null;
+  });
+}
 
-  function sendMessage() {
-    const messageText = messageInput.value;
-    if (messageText.trim() === '') return;
-    if (currentChat === 'Amigo Online' && currentConn) {
-      currentConn.send({ type: 'chat', message: messageText });
-      createMessageElement('Tú', messageText, 'sent');
-    } else if (currentChat !== 'Amigo Online') {
-      createMessageElement('Tú', messageText, 'sent');
+/* =========================
+   Llamadas: iniciar / UI / control
+   ========================= */
+async function startCall() {
+  if (currentChat !== 'Anonimo Online' || !currentConn) return alert('Debes estar en el chat de "Anonimo Online" y conectado para llamar.');
+  try {
+    myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    currentCall = peer.call(currentConn.peer, myStream);
+    currentCall.on('stream', remoteStream => {
+      remoteAudio.srcObject = remoteStream;
+      // si asistente activo, silenciar audio remoto
+      remoteAudio.muted = !!assistantActive;
+    });
+    currentCall.on('close', () => handleCallEnded());
+    currentCall.on('error', () => handleCallEnded());
+    showCallUI(currentConn.peer, 'Llamando...');
+  } catch (err) {
+    alert('No se pudo acceder al micrófono.');
+  }
+}
+
+function showCallUI(peerIdOrName, status = 'Conectando...') {
+  callNameEl.textContent = peerIdOrName;
+  callStatusEl.textContent = status;
+  callBottomSheet.classList.add('active');
+  callBottomSheet.setAttribute('aria-hidden', 'false');
+  // asegurar estado del audio remoto según asistente
+  remoteAudio.muted = !!assistantActive;
+}
+
+function hideCallUI() {
+  callBottomSheet.classList.remove('active');
+  callBottomSheet.setAttribute('aria-hidden', 'true');
+}
+
+function handleCallEnded() {
+  // cerrar tracks locales
+  if (myStream) {
+    myStream.getTracks().forEach(t => t.stop());
+    myStream = null;
+  }
+  // reset UI
+  callStatusEl.textContent = 'Llamada finalizada';
+  remoteAudio.srcObject = null;
+  currentCall = null;
+  hideCallUI();
+}
+
+/* Terminar llamada */
+function endCall() {
+  if (currentCall && typeof currentCall.close === 'function') {
+    try { currentCall.close(); } catch(e){}
+  }
+  // cerrar también la conexión P2P si se desea
+  if (myStream) {
+    myStream.getTracks().forEach(t => t.stop());
+    myStream = null;
+  }
+  // opcional: notificar al peer que se colgó
+  hideCallUI();
+  callStatusEl.textContent = 'Llamada finalizada';
+}
+
+/* Silenciar micrófono local */
+function toggleMuteMic() {
+  if (!myStream) {
+    alert('No hay flujo de micrófono activo.');
+    return;
+  }
+  isMutedMic = !isMutedMic;
+  myStream.getAudioTracks().forEach(track => track.enabled = !isMutedMic);
+  btnMuteMic.textContent = isMutedMic ? '🔈' : '🔇';
+}
+
+/* =========================
+   Asistente: TTS y traducción
+   ========================= */
+
+/* toggle assistant on/off */
+function toggleAssistant() {
+  assistantActive = !assistantActive;
+  btnToggleAssistant.textContent = assistantActive ? '🤖' : '🤖';
+  btnToggleAssistant.style.background = assistantActive ? '#00a884' : '#242424';
+  // si asistente activo, silenciar audio remoto para que no escuches a tu amigo
+  remoteAudio.muted = !!assistantActive;
+  // feedback hablado
+  if (assistantActive) speakAssistant('Asistente activado. Ahora hablaré en lugar de la voz remota.', translateTarget.value);
+  else speakAssistant('Asistente desactivado.', translateTarget.value);
+}
+
+/* toggle translate on/off */
+function toggleTranslate() {
+  translateEnabled = !translateEnabled;
+  btnTranslateToggle.textContent = translateEnabled ? 'Traducir: ON' : 'Traducir: OFF';
+  btnTranslateToggle.style.background = translateEnabled ? '#00a884' : 'transparent';
+}
+
+/* speak assistant: texto local (sin traducción) */
+function speakAssistant(text, lang = 'es-ES') {
+  if (!('speechSynthesis' in window)) {
+    alert('SpeechSynthesis no está disponible en este navegador.');
+    return;
+  }
+  const u = new SpeechSynthesisUtterance(String(text));
+  u.lang = lang || 'es-ES';
+  u.volume = assistantVolume; // 0..1
+  u.rate = 1;
+  u.pitch = 1;
+  // elegir voz preferente por idioma
+  const voices = speechSynthesis.getVoices();
+  if (voices && voices.length) {
+    // escoger primera que coincida con el language
+    const candidate = voices.find(v => v.lang && v.lang.toLowerCase().startsWith((lang||'es').slice(0,2)));
+    if (candidate) u.voice = candidate;
+  }
+  speechSynthesis.cancel(); // limpiar cola
+  speechSynthesis.speak(u);
+}
+
+/* manual speak desde UI (no envía al peer) */
+function assistantSpeakManual() {
+  const txt = assistantSpeakInput.value.trim();
+  if (!txt) return;
+  if (translateEnabled && userApiKey) {
+    translateThenSpeak(txt, translateTarget.value);
+  } else {
+    speakAssistant(txt, translateTarget.value);
+  }
+}
+
+/* speak y enviar al peer (marca como assistant_chat) */
+function assistantSpeakAndSend() {
+  const txt = assistantSpeakInput.value.trim();
+  if (!txt) return;
+  // localmente hablar
+  if (translateEnabled && userApiKey) {
+    translateThenSpeakAndSend(txt, translateTarget.value);
+  } else {
+    speakAssistant(txt, translateTarget.value);
+    // enviar texto al peer con tipo especial para que el otro pueda mostrar/usar TTS
+    if (currentConn && currentConn.open) {
+      currentConn.send({ type: 'assistant_chat', text: txt });
+    }
+  }
+  assistantSpeakInput.value = '';
+}
+
+/* actualizar volumen desde slider */
+assistantVolumeInput.addEventListener('input', (e) => {
+  assistantVolume = parseFloat(e.target.value);
+});
+
+/* autoSpeak checkbox */
+autoSpeakCheckbox.addEventListener('change', () => {
+  autoSpeakOnReceive = autoSpeakCheckbox.checked;
+});
+
+/* =========================
+   Traducción con OpenRouter (si hay userApiKey)
+   ========================= */
+
+/*
+  translateThenSpeak(text, targetLang)
+  - si hay userApiKey: hace petición a OpenRouter para recibir el texto traducido, lo habla.
+  - si no hay clave: habla el texto original y muestra aviso.
+*/
+async function translateThenSpeak(text, targetLangTag = 'es-ES') {
+  if (!userApiKey) {
+    // si no hay key, hablar original y avisar al usuario
+    speakAssistant(text, targetLangTag);
+    // opcional: mostrar en chat el aviso
+    createMessageElement('META AI', 'Aviso: para traducir en tiempo real, configura tu API Key.', 'received', null, true);
+    return;
+  }
+
+  // Hacemos una petición a OpenRouter para traducir
+  const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+  const systemPrompt = `Eres un traductor que devuelve SOLO el texto traducido sin comentarios. Traduce este texto al idioma solicitado. Responde solo con la traducción precisa.`;
+  const targetDisplay = mapLangToLocale(targetLangTag);
+
+  try {
+    const reqBody = {
+      model: "openai/gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Traduce esto al idioma ${targetDisplay}: """${text}"""` }
+      ],
+      temperature: 0.1,
+      max_tokens: 1500
+    };
+
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userApiKey}`
+      },
+      body: JSON.stringify(reqBody)
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      console.error('Error OpenRouter', data);
+      speakAssistant(text, targetLangTag); // fallback hablar original
+      return;
+    }
+
+    const translated = (data?.choices?.[0]?.message?.content || '').trim();
+    if (translated) {
+      speakAssistant(translated, targetLangTag);
     } else {
-      alert('No estás conectado a nadie para enviar este mensaje.');
+      speakAssistant(text, targetLangTag);
     }
+  } catch (err) {
+    console.error('Error traduciendo:', err);
+    speakAssistant(text, targetLangTag);
+  }
+}
+
+/* translateThenSpeakAndSend: traduce, habla y envía versión traducida al peer */
+async function translateThenSpeakAndSend(text, targetLangTag = 'es-ES') {
+  if (!userApiKey) {
+    speakAssistant(text, targetLangTag);
+    if (currentConn && currentConn.open) currentConn.send({ type: 'assistant_chat', text });
+    return;
+  }
+  const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+  const systemPrompt = `Eres un traductor que devuelve SOLO el texto traducido sin comentarios. Traduce este texto al idioma solicitado. Responde solo con la traducción precisa.`;
+  const targetDisplay = mapLangToLocale(targetLangTag);
+
+  try {
+    const reqBody = {
+      model: "openai/gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Traduce esto al idioma ${targetDisplay}: """${text}"""` }
+      ],
+      temperature: 0.1,
+      max_tokens: 1500
+    };
+
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userApiKey}`
+      },
+      body: JSON.stringify(reqBody)
+    });
+
+    const data = await resp.json();
+    const translated = (data?.choices?.[0]?.message?.content || text).trim();
+    speakAssistant(translated, targetLangTag);
+    if (currentConn && currentConn.open) currentConn.send({ type: 'assistant_chat', text: translated });
+  } catch (err) {
+    console.error('Error traduciendo y enviando:', err);
+    speakAssistant(text, targetLangTag);
+    if (currentConn && currentConn.open) currentConn.send({ type: 'assistant_chat', text });
+  }
+}
+
+/* Helper: map tag like 'es-ES' a nombre legible */
+function mapLangToLocale(tag) {
+  if (!tag) return 'Español';
+  if (tag.startsWith('es')) return 'Español';
+  if (tag.startsWith('en')) return 'Inglés';
+  if (tag.startsWith('pt')) return 'Portugués';
+  if (tag.startsWith('fr')) return 'Francés';
+  return tag;
+}
+
+/* =========================
+   CHAT: envío, recepción, UI
+   ========================= */
+function openChat(chatName) {
+  if (chatName === 'Anonimo Online' && !currentConn) {
+    return alert('Primero conéctate con un Anonimo para usar este chat.');
+  }
+  currentChat = chatName;
+  chatHeaderText.textContent = chatName === 'Anonimo Online' ? friendNameLabel.textContent : chatName;
+  chatMessages.innerHTML = '';
+
+  if (!chatHistories[chatName]) chatHistories[chatName] = [];
+
+  // inicial
+  if (chatName === 'META AI' && chatHistories[chatName].length === 0) {
+    if (!userApiKey) {
+      chatHistories[chatName].push({ sender: 'META AI', text: 'Para usar Meta AI, por favor pega tu clave de API (por ejemplo de OpenRouter) y presiona enviar. Tu clave se guardará en tu navegador.', type: 'received' });
+    } else {
+      chatHistories[chatName].push({ sender: 'META AI', text: '¡Hola de nuevo! ¿En qué puedo ayudarte?', type: 'received' });
+    }
+  }
+
+  chatHistories[chatName].forEach(msg => {
+    if (msg.isContactCard) {
+      displayContactCard(msg.contacts, false);
+    } else {
+      createMessageElement(msg.sender, msg.text, msg.type, msg.repliedTo, false);
+    }
+  });
+
+  if (chatName === 'META AI') {
+    chatHeaderAvatar.classList.add('meta-ai-avatar');
+    verifiedIconHeader.style.display = 'inline-block';
+  } else {
+    chatHeaderAvatar.classList.remove('meta-ai-avatar');
+    verifiedIconHeader.style.display = 'none';
+  }
+
+  chatScreen.classList.add('active');
+  setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 0);
+}
+
+function closeChat(){ chatScreen.classList.remove('active'); }
+function openProfileInfo() { profileScreen.classList.add('active'); }
+function closeProfileInfo() { profileScreen.classList.remove('active'); }
+
+function sendMessage(){
+  const messageText = messageInput.value.trim();
+  if (messageText === '') return;
+
+  if (messageText === '.ctt') {
+    sendContactSpam();
     messageInput.value = '';
+    return;
   }
 
-  function createMessageElement(sender, text, type, repliedTo = null, saveToHistory = true) {
-    if (saveToHistory && currentChat) {
-      if (!chatHistories[currentChat]) chatHistories[currentChat] = [];
-      chatHistories[currentChat].push({ sender, text, type, repliedTo });
-    }
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message', type);
-    let senderName = (sender === 'Tú' || sender === myPeerId) ? 'Tú' : friendNameLabel.textContent;
-    if (type === 'received') senderName = friendNameLabel.textContent;
-    messageElement.innerHTML = `<div><strong>${senderName}:</strong> ${text}</div>`;
-    chatMessages.appendChild(messageElement);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+  // guardar API key si estamos en META AI y no hay
+  if (currentChat === 'META AI' && !userApiKey) {
+    userApiKey = messageText;
+    localStorage.setItem('userApiKey', userApiKey);
+    messageInput.value = '';
+    chatMessages.innerHTML = '';
+    chatHistories['META AI'] = [];
+    const confirmText = "¡Clave guardada! Ahora puedes chatear conmigo.";
+    createMessageElement('META AI', confirmText, 'received');
+    return;
   }
 
-  // --- Event listeners ---
-  document.getElementById('sendButton').addEventListener('click', sendMessage);
-  document.getElementById('messageInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
+  if (currentChat === 'Anonimo Online') {
+    if (currentConn && currentConn.open) {
+      currentConn.send({ type: 'chat', message: messageText, repliedTo: messageToReply });
+      createMessageElement('Tú', messageText, 'sent', messageToReply);
+    } else { alert('No estás conectado.'); return; }
+  } else {
+    createMessageElement('Tú', messageText, 'sent', messageToReply);
+    if (currentChat === 'META AI') {
+      getAIResponse(messageText);
+    }
+  }
+
+  messageSound.play().catch(e => console.error("Error de sonido:", e));
+  messageInput.value = '';
+  messageToReply = null;
+  replyPreview.style.display = 'none';
+}
+
+function sendContactSpam() {
+  let count = 0;
+  const interval = setInterval(() => {
+    if (count >= 100) { clearInterval(interval); return; }
+    count++;
+    const dummyContacts = [{ name: `Contacto ${count}`, tel: `+00 000 000 0${String(count).padStart(2, '0')}` }];
+    displayContactCard(dummyContacts, true);
+  }, 100);
+}
+
+function createMessageElement(sender, text, type, repliedTo = null, saveToHistory = true) {
+  if (saveToHistory) {
+    if (!chatHistories[currentChat]) chatHistories[currentChat] = [];
+    chatHistories[currentChat].push({ sender, text, type, repliedTo });
+  }
+  const messageElement = document.createElement('div');
+  messageElement.classList.add('message', type);
+
+  let messageHTML = '';
+  if (repliedTo) {
+    messageHTML += `<div class="quoted-reply"><div class="quoted-sender">${repliedTo.sender}</div><div class="quoted-text">${repliedTo.text}</div></div>`;
+  }
+  messageHTML += `<div>${escapeHtml(text)}</div>`;
+  messageElement.innerHTML = messageHTML;
+  messageElement.addEventListener('click', () => {
+    const senderName = (type === 'sent') ? 'Tú' : (sender === 'META AI' ? 'META AI' : friendNameLabel.textContent);
+    selectMessageToReply(senderName, text);
   });
+  chatMessages.appendChild(messageElement);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
 
-  // --- Configuración de opciones ---
-  const settingsBtn = document.getElementById('settingsBtn');
-  const bottomSheet = document.getElementById('bottomSheet');
+function selectMessageToReply(senderName, messageText) {
+  messageToReply = { sender: senderName, text: messageText };
+  document.getElementById('replyPreviewSender').textContent = senderName;
+  document.getElementById('replyPreviewText').textContent = messageText;
+  replyPreview.style.display = 'block';
+  messageInput.focus();
+}
+closeReply.addEventListener('click', () => {
+  messageToReply = null;
+  replyPreview.style.display = 'none';
+});
 
-  settingsBtn.addEventListener('click', () => {
-    bottomSheet.classList.toggle('active');
-  });
+/* ==================================================
+   IA: obtener respuesta (usas OpenRouter en tu app)
+   ================================================== */
+async function getAIResponse(userMessage) {
+  if (!userApiKey) {
+    createMessageElement('META AI', 'Por favor, configura tu clave de API primero.', 'received');
+    return;
+  }
 
-  const translateCallsCheckbox = document.getElementById('toggleTranslateCalls');
-  const subtitlesCheckbox = document.getElementById('toggleSubtitles');
-  const synthesisCheckbox = document.getElementById('toggleSynthesis');
-  const autoTranslateCheckbox = document.getElementById('toggleAutoTranslate');
+  const typingIndicator = document.createElement('div');
+  typingIndicator.classList.add('message', 'received');
+  typingIndicator.innerHTML = `<div>escribiendo...</div>`;
+  chatMessages.appendChild(typingIndicator);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 
-  // Funciones para las opciones
-  translateCallsCheckbox.addEventListener('change', () => {
-    if (translateCallsCheckbox.checked) {
-      alert('Función de traducción de llamadas activada');
-    } else {
-      alert('Función de traducción de llamadas desactivada');
+  const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+  const requestOptions = {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userApiKey}`
+      },
+      body: JSON.stringify({
+          model: "openai/gpt-3.5-turbo",
+          messages: [{ role: "user", content: userMessage }]
+      })
+  };
+
+  try {
+      const response = await fetch(API_URL, requestOptions);
+      const data = await response.json();
+
+      if (!response.ok) {
+          throw new Error(data.error ? data.error.message : `Error HTTP: ${response.status}`);
+      }
+
+      const aiMessage = data.choices[0].message.content;
+
+      typingIndicator.remove();
+      createMessageElement('META AI', aiMessage, 'received');
+
+      // si el asistente está activo y se desea que lea respuestas de META AI:
+      if (assistantActive && autoSpeakOnReceive) {
+        if (translateEnabled && userApiKey) {
+          await translateThenSpeak(aiMessage, translateTarget.value);
+        } else {
+          speakAssistant(aiMessage, translateTarget.value || 'es-ES');
+        }
+      }
+
+  } catch (error) {
+      console.error("Error al contactar la API:", error);
+      typingIndicator.remove();
+      const errorMessage = `Lo siento, hubo un error. Verifica que tu API Key sea correcta y tenga fondos. (Error: ${error.message})`;
+      createMessageElement('META AI', errorMessage, 'received');
+  }
+}
+
+/* ==================================================
+   Archivos VCF / Contact Cards
+   ================================================== */
+attachButton.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  if (!file || !file.name.toLowerCase().endsWith('.vcf')) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const contacts = parseVCF(e.target.result);
+    if (contacts.length > 0) displayContactCard(contacts);
+    else alert("No se pudieron leer contactos del archivo .vcf.");
+  };
+  reader.readAsText(file);
+  fileInput.value = '';
+});
+
+function parseVCF(vcfContent) {
+  const contacts = [];
+  const cards = vcfContent.split(/END:VCARD/i);
+  cards.forEach(card => {
+    if (card.trim() === '') return;
+    let name = "Sin nombre", tel = "Sin número";
+    const nameMatch = card.match(/^(FN|FN;CHARSET=UTF-8):(.*)$/im);
+    if (nameMatch && nameMatch[2]) name = nameMatch[2].trim();
+    const telMatch = card.match(/^(TEL;.*|TEL):(.*)$/im);
+    if (telMatch && telMatch[2]) tel = telMatch[2].trim();
+    if (name !== "Sin nombre" || tel !== "Sin número") {
+      contacts.push({ name, tel });
     }
   });
-  subtitlesCheckbox.addEventListener('change', () => {
-    if (subtitlesCheckbox.checked) {
-      alert('Subtítulos en tiempo real activados');
-    } else {
-      alert('Subtítulos en tiempo real desactivados');
-    }
-  });
-  synthesisCheckbox.addEventListener('change', () => {
-    if (synthesisCheckbox.checked) {
-      alert('Síntesis de voz activada');
-    } else {
-      alert('Síntesis de voz desactivada');
-    }
-  });
-  autoTranslateCheckbox.addEventListener('change', () => {
-    if (autoTranslateCheckbox.checked) {
-      alert('Traducción automática activada');
-    } else {
-      alert('Traducción automática desactivada');
-    }
-  });
+  return contacts;
+}
+
+function displayContactCard(contacts, saveToHistory = true) {
+  if (saveToHistory) {
+    messageSound.currentTime = 0; 
+    messageSound.play().catch(e => console.error("Error de sonido:", e));
+    if (currentChat) chatHistories[currentChat].push({ isContactCard: true, contacts: contacts });
+  }
+
+  const messageElement = document.createElement('div');
+  messageElement.classList.add('message', 'sent', 'message-vcf');
+  
+  const limitedContacts = contacts.slice(0, 3);
+  const totalAvatars = limitedContacts.length;
+  
+  const avatars = limitedContacts.map((contact, index) => `<img src="https://i.ibb.co/ZpzCHmBX/avatar-contact.webp" alt="avatar" style="z-index:${totalAvatars - index};">`).join('');
+  let more = contacts.length > 3 ? `<div class="more-contacts" style="z-index:0;">+${contacts.length - 3}</div>` : '';
+  
+  const cardTitle = contacts.length === 1 ? contacts[0].name : `${contacts.length} contactos`;
+  const cardSubtitle = contacts.length === 1 ? contacts[0].tel : '';
+
+  messageElement.innerHTML = `<div class="contact-card"><div class="contact-card-header"><div class="contact-avatars">${avatars}${more}</div><div class="contact-info"><div class="contact-name">${cardTitle}</div><div class="contact-phone">${cardSubtitle}</div></div></div><div class="contact-card-footer" onclick="alert('Acción: Ver o agregar contacto(s)')">Ver contacto(s)</div></div>`;
+  
+  messageElement.addEventListener('click', () => { selectMessageToReply('Tú', '[Tarjeta de Contacto]'); });
+  
+  chatMessages.appendChild(messageElement);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/* ==================================================
+   Utilidades pequeñas
+   ================================================== */
+function escapeHtml(unsafe) {
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/* Asignación de event listeners UI básicos */
+sendButton.addEventListener('click', sendMessage);
+messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+chatHeaderInfo.addEventListener('click', () => { if (currentChat === 'META AI') openProfileInfo(); });
+
+/* ==================================================
+   NOTAS / LIMITACIONES
+   ==================================================
+ - Este código hace que cuando el asistente está ON:
+    • se silencie el audio remoto (remoteAudio.muted = true) — "Google no se escuchará",
+      y en su lugar el asistente reproducirá texto (TTS) en tu lado.
+    • el asistente lee mensajes de texto entrantes (data channel) y respuestas de META AI.
+ - PARA traducir la voz real en tiempo real (hablado por tu amigo) necesitas:
+    1) Capturar el audio remoto en el servidor o usar una API STT (ej. Google Cloud Speech-to-Text,
+       Whisper en servidor, etc.) que transforme audio->texto en tiempo real.
+    2) Enviar ese texto al traductor/TTS y reproducir la voz traducida en el cliente.
+    Eso requiere infraestructura de servidor o servicios de streaming y no puede hacerse
+    completamente offline solo con WebRTC/PeerJS en navegador sin STT externo.
+ - Si quieres, implemento la versión con STT+TRADUCCIÓN (requiere un backend) o te doy
+   ejemplos concretos de servicios (APIs, costos y un flujo) para integrarlo.
+*/
+
 </script>
 </body>
 </html>
